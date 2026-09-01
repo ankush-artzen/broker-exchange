@@ -1,0 +1,157 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Property, PropertyFormData } from "@/lib/types";
+import { api } from "@/lib/api";
+import { PropertyCard } from "@/components/PropertyCard";
+import { PropertyDetailSheet } from "@/components/PropertyDetailSheet";
+import { PropertyForm } from "@/components/PropertyForm";
+import { Modal } from "@/components/Modal";
+import { AddButton, AppPage } from "@/components/AppPage";
+import { cn, getPropertyStatus } from "@/lib/utils";
+import { House } from "lucide-react";
+
+type PropertyFilter = "all" | "available" | "reserved";
+
+const filters: { id: PropertyFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "available", label: "Available" },
+  { id: "reserved", label: "Reserved" },
+];
+
+export default function PropertiesPage() {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Property | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [filter, setFilter] = useState<PropertyFilter>("all");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.getProperties();
+      setProperties(data);
+    } catch {
+      setProperties([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    if (sessionStorage.getItem("quick-add") === "property") {
+      sessionStorage.removeItem("quick-add");
+      setAddOpen(true);
+    }
+  }, []);
+
+  const filtered = useMemo(() => {
+    return properties.filter((property) => {
+      if (filter === "all") return true;
+      return getPropertyStatus(property) === filter;
+    });
+  }, [properties, filter]);
+
+  const handleCreate = async (data: PropertyFormData) => {
+    await api.createProperty(data);
+    setAddOpen(false);
+    load();
+  };
+
+  const countLabel = `${properties.length} ${properties.length === 1 ? "property" : "properties"}`;
+
+  return (
+    <AppPage
+      header={
+        <header className="mb-4 flex items-baseline justify-between gap-3">
+          <h1 className="font-serif text-[23px] font-medium text-primary">
+            Properties
+          </h1>
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="text-[12.5px] text-muted">{countLabel}</span>
+            <AddButton onClick={() => setAddOpen(true)} />
+          </div>
+        </header>
+      }
+    >
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {filters.map((chip) => (
+          <button
+            key={chip.id}
+            type="button"
+            onClick={() => setFilter(chip.id)}
+            className={cn(
+              "shrink-0 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-colors",
+              filter === chip.id
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-surface text-muted",
+            )}
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="space-y-2.5">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-[88px] animate-pulse rounded-[14px] bg-surface"
+            />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-2xl bg-surface px-4 py-9 text-center text-[13.5px] leading-relaxed text-muted">
+          <House size={36} strokeWidth={1.5} className="mx-auto mb-3 text-upcoming" />
+          <p className="font-medium text-primary">
+            {properties.length === 0 ? "No properties yet" : "No properties match this filter"}
+          </p>
+          <p className="mt-1">
+            {properties.length === 0
+              ? "Tap + Add to create your first listing."
+              : "Try a different filter."}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {filtered.map((property) => (
+            <PropertyCard
+              key={property.id}
+              property={property}
+              onClick={() => setSelected(property)}
+            />
+          ))}
+        </div>
+      )}
+
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add Property">
+        <PropertyForm
+          onSubmit={handleCreate}
+          onCancel={() => setAddOpen(false)}
+        />
+      </Modal>
+
+      <PropertyDetailSheet
+        property={selected}
+        open={!!selected}
+        onClose={() => {
+          setSelected(null);
+          load();
+        }}
+        onUpdate={async (id, data) => {
+          await api.updateProperty(id, data);
+          load();
+        }}
+        onDelete={async (id) => {
+          await api.deleteProperty(id);
+          load();
+        }}
+      />
+    </AppPage>
+  );
+}

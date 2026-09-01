@@ -1,0 +1,32 @@
+"use client";
+
+import { addDays } from "@/lib/utils";
+
+interface Props {
+  onReschedule: (date: Date) => void;
+  loading?: boolean;
+}
+
+export function RescheduleButtons({ onReschedule, loading }: Props) {
+  const options = [
+    { label: "Tomorrow", days: 1 },
+    { label: "3 days", days: 3 },
+    { label: "1 week", days: 7 },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => (
+        <button
+          key={opt.label}
+          type="button"
+          disabled={loading}
+          onClick={() => onReschedule(addDays(new Date(), opt.days))}
+          className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 active:bg-emerald-100 disabled:opacity-50"
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
