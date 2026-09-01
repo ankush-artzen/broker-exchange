@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
       id: user.id,
       name: user.name,
       phone: user.phone,
+      profilePictureUrl: user.profilePictureUrl,
       createdAt: user.createdAt.toISOString(),
     });
   } catch (error) {

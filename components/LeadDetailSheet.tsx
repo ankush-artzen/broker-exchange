@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Lead, LeadFormData } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getLeadStatus } from "@/lib/utils";
 import { CallWhatsAppButtons } from "./CallWhatsAppButtons";
 import { RescheduleButtons } from "./RescheduleButtons";
 import { LeadForm } from "./LeadForm";
@@ -29,6 +29,8 @@ export function LeadDetailSheet({
   if (!lead) return null;
 
   const whatsappMsg = `Hi ${lead.name}, this is regarding your property requirement${lead.requirement ? ` for ${lead.requirement}` : ""}.`;
+  const statusLabel =
+    getLeadStatus(lead).charAt(0).toUpperCase() + getLeadStatus(lead).slice(1);
 
   const handleMarkDone = async () => {
     setLoading(true);
@@ -90,6 +92,10 @@ export function LeadDetailSheet({
           <InfoRow label="Location" value={lead.location} />
           <InfoRow label="Budget" value={lead.budget} />
           <InfoRow label="Source" value={lead.source} />
+          <InfoRow
+            label="Status"
+            value={statusLabel}
+          />
           <InfoRow label="Follow-up" value={formatDate(lead.followUpDate)} />
           {lead.notes && <InfoRow label="Notes" value={lead.notes} />}
 

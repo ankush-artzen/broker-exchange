@@ -2,8 +2,11 @@ export interface User {
   id: string;
   name: string;
   phone: string;
+  profilePictureUrl?: string | null;
   createdAt: string;
 }
+
+export type UserProfileData = Pick<User, "name" | "phone" | "profilePictureUrl">;
 
 export interface Lead {
   id: string;
@@ -17,6 +20,7 @@ export interface Lead {
   notes?: string | null;
   followUpDate?: string | null;
   followUpDone: boolean;
+  status?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -50,7 +54,7 @@ export interface ParsedLead {
 export type LeadFormData = Omit<
   Lead,
   "id" | "userId" | "createdAt" | "updatedAt" | "followUpDone"
-> & { followUpDone?: boolean };
+> & { followUpDone?: boolean; status?: string | null };
 
 export type PropertyFormData = Omit<
   Property,

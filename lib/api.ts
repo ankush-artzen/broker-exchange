@@ -1,4 +1,12 @@
-import type { Lead, LeadFormData, ParsedLead, Property, PropertyFormData, User } from "./types";
+import type {
+  Lead,
+  LeadFormData,
+  ParsedLead,
+  Property,
+  PropertyFormData,
+  User,
+  UserProfileData,
+} from "./types";
 import { getStoredUserId } from "./storage";
 
 async function request<T>(
@@ -30,6 +38,17 @@ export const api = {
     return request<User>("/api/users/identify", {
       method: "POST",
       body: JSON.stringify({ name, phone }),
+    });
+  },
+
+  getProfile() {
+    return request<User>("/api/users/me");
+  },
+
+  updateProfile(data: Partial<UserProfileData>) {
+    return request<User>("/api/users/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
     });
   },
 

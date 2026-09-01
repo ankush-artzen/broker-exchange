@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { LeadFormData } from "@/lib/types";
+import { cn, normalizeFollowUpInput, type LeadStatus } from "@/lib/utils";
 
 const emptyLead: LeadFormData = {
   name: "",
@@ -12,7 +13,14 @@ const emptyLead: LeadFormData = {
   source: "",
   notes: "",
   followUpDate: "",
+  status: "new",
 };
+
+const statusOptions: { id: LeadStatus; label: string }[] = [
+  { id: "new", label: "New" },
+  { id: "interested", label: "Interested" },
+  { id: "negotiation", label: "Negotiation" },
+];
 
 interface Props {
   initial?: Partial<LeadFormData>;
@@ -33,6 +41,7 @@ export function LeadForm({
     ...emptyLead,
     ...initial,
     followUpDate: initial?.followUpDate?.split("T")[0] ?? "",
+    status: initial?.status ?? "new",
   }));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -42,6 +51,7 @@ export function LeadForm({
       ...emptyLead,
       ...initial,
       followUpDate: initial?.followUpDate?.split("T")[0] ?? "",
+      status: initial?.status ?? "new",
     });
   }, [initial]);
 
@@ -57,16 +67,14 @@ export function LeadForm({
       return;
     }
 
-    let followUpDate: string | null = form.followUpDate || null;
-    if (followUpDate && Number.isNaN(Date.parse(followUpDate))) {
-      followUpDate = null;
-    }
+    const followUpDate = normalizeFollowUpInput(form.followUpDate ?? "");
 
     setLoading(true);
     try {
       await onSubmit({
         ...form,
         followUpDate,
+        status: form.status ?? "new",
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
@@ -171,6 +179,29 @@ export function LeadForm({
           />
         </div>
       )}
+
+      <div>
+        <label className="mb-1.5 block text-xs font-semibold text-muted">
+          Status
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {statusOptions.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => update("status", option.id)}
+              className={cn(
+                "rounded-full border px-3 py-1.5 text-[12.5px] font-medium transition-colors",
+                (form.status ?? "new") === option.id
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-surface text-muted",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <Field
         label={isAdd ? "Next follow-up" : "Follow-up date"}

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getUserId, unauthorized } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+import { parseFollowUpDate } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   const userId = getUserId(request);
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
       source,
       notes,
       followUpDate,
+      status,
     } = body;
 
     if (!name?.trim() || !phone?.trim()) {
@@ -60,7 +62,8 @@ export async function POST(request: NextRequest) {
         budget: budget?.trim() || null,
         source: source?.trim() || null,
         notes: notes?.trim() || null,
-        followUpDate: followUpDate ? new Date(followUpDate) : null,
+        followUpDate: followUpDate ? parseFollowUpDate(followUpDate) : null,
+        status: status?.trim() || "new",
       },
     });
 

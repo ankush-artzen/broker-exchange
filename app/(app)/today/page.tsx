@@ -1,20 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Lead } from "@/lib/types";
 import { api } from "@/lib/api";
-import { getStoredUserName } from "@/lib/storage";
+import { getStoredUserProfile, type StoredUserProfile } from "@/lib/storage";
 import {
   cn,
   formatLongDate,
   getGreeting,
-  getInitials,
   isOverdue,
 } from "@/lib/utils";
 import { LeadDetailSheet } from "@/components/LeadDetailSheet";
 import { CallWhatsAppButtons } from "@/components/CallWhatsAppButtons";
 import { AppPage } from "@/components/AppPage";
+import { UserAvatar } from "@/components/UserAvatar";
 import { AlertCircle, CircleCheck } from "lucide-react";
 
 export default function TodayPage() {
@@ -23,8 +24,14 @@ export default function TodayPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Lead | null>(null);
-  const userName = getStoredUserName();
+  const pathname = usePathname();
+  const [userProfile, setUserProfile] = useState<StoredUserProfile | null>(null);
+  const userName = userProfile?.name;
   const firstName = userName?.split(" ")[0] ?? "Broker";
+
+  useEffect(() => {
+    setUserProfile(getStoredUserProfile());
+  }, [pathname]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,9 +76,17 @@ export default function TodayPage() {
             </h1>
             <p className="mt-1 text-[12.5px] text-muted">{formatLongDate()}</p>
           </div>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-            {getInitials(userName)}
-          </div>
+          <Link
+            href="/account"
+            aria-label="Go to account"
+            className="active:opacity-90"
+          >
+            <UserAvatar
+              name={userName}
+              imageUrl={userProfile?.profilePictureUrl}
+              size={44}
+            />
+          </Link>
         </header>
       }
     >

@@ -23,7 +23,11 @@ export default function OnboardingPage() {
     setLoading(true);
     try {
       const user = await api.identify(name.trim(), phone.trim());
-      setStoredUser(user.id, user.name);
+      setStoredUser(user.id, {
+        name: user.name,
+        phone: user.phone,
+        profilePictureUrl: user.profilePictureUrl,
+      });
       router.replace("/today");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

@@ -7,15 +7,14 @@ import { LeadCard } from "@/components/LeadCard";
 import { LeadDetailSheet } from "@/components/LeadDetailSheet";
 import { VoiceLeadCapture } from "@/components/VoiceLeadCapture";
 import { AddButton, AppPage } from "@/components/AppPage";
+import { ListPagination } from "@/components/ListPagination";
+import { usePagination } from "@/hooks/usePagination";
 import {
   cn,
-  getLeadStatus,
-  isOverdue,
-  isToday,
+  matchesLeadFilter,
+  type LeadFilter,
 } from "@/lib/utils";
 import { User } from "lucide-react";
-
-type LeadFilter = "all" | "due-today" | "new" | "negotiation";
 
 const filters: { id: LeadFilter; label: string }[] = [
   { id: "all", label: "All" },
@@ -55,17 +54,11 @@ export default function LeadsPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    return leads.filter((lead) => {
-      if (filter === "all") return true;
-      if (filter === "due-today") {
-        if (!lead.followUpDate || lead.followUpDone) return false;
-        return isOverdue(lead.followUpDate) || isToday(lead.followUpDate);
-      }
-      if (filter === "new") return getLeadStatus(lead) === "new";
-      if (filter === "negotiation") return getLeadStatus(lead) === "negotiation";
-      return true;
-    });
+    return leads.filter((lead) => matchesLeadFilter(lead, filter));
   }, [leads, filter]);
+
+  const { page, setPage, totalPages, paginatedItems, pageSize, total } =
+    usePagination(filtered, filter);
 
   const handleCreate = async (data: LeadFormData) => {
     await api.createLead(data);
@@ -119,15 +112,24 @@ export default function LeadsPage() {
             : "No leads match this filter."}
         </div>
       ) : (
-        <div className="space-y-2.5">
-          {filtered.map((lead) => (
-            <LeadCard
-              key={lead.id}
-              lead={lead}
-              onClick={() => setSelected(lead)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="space-y-2.5">
+            {paginatedItems.map((lead) => (
+              <LeadCard
+                key={lead.id}
+                lead={lead}
+                onClick={() => setSelected(lead)}
+              />
+            ))}
+          </div>
+          <ListPagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+          />
+        </>
       )}
 
       <VoiceLeadCapture

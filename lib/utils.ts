@@ -70,28 +70,99 @@ export function formatCurrency(value: string | null | undefined): string {
   return value;
 }
 
+export function formatDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+export function parseFollowUpDate(
+  value: string | Date | null | undefined,
+): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  const isoDate = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoDate) {
+    return new Date(+isoDate[1], +isoDate[2] - 1, +isoDate[3]);
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function toLocalDateKey(
+  date: string | Date | null | undefined,
+): string {
+  const d =
+    typeof date === "string" ? parseFollowUpDate(date) : date ?? null;
+  if (!d || Number.isNaN(d.getTime())) return "";
+  return formatDateKey(d);
+}
+
+export function normalizeFollowUpInput(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+  const lower = trimmed.toLowerCase();
+  const today = startOfToday();
+  if (/\btoday\b/.test(lower)) return formatDateKey(today);
+  if (/\btomorrow\b/.test(lower)) return formatDateKey(addDays(today, 1));
+
+  const parsed = parseFollowUpDate(trimmed);
+  return parsed ? formatDateKey(parsed) : null;
+}
+
 export function isOverdue(followUpDate: string | null | undefined): boolean {
   if (!followUpDate) return false;
-  const d = new Date(followUpDate);
-  d.setHours(23, 59, 59, 999);
-  return d < startOfToday();
+  const key = toLocalDateKey(followUpDate);
+  if (!key) return false;
+  return key < toLocalDateKey(new Date());
 }
 
 export function isToday(date: string | null | undefined): boolean {
   if (!date) return false;
-  const d = new Date(date);
-  const today = startOfToday();
-  const end = endOfToday();
-  return d >= today && d <= end;
+  const key = toLocalDateKey(date);
+  if (!key) return false;
+  return key === toLocalDateKey(new Date());
+}
+
+export function isDueForFollowUp(lead: {
+  followUpDate?: string | null;
+  followUpDone: boolean;
+}): boolean {
+  if (!lead.followUpDate || lead.followUpDone) return false;
+  return isOverdue(lead.followUpDate) || isToday(lead.followUpDate);
 }
 
 export type LeadStatus = "new" | "interested" | "negotiation";
 
+export type LeadFilter = "all" | "due-today" | "new" | "negotiation";
+
+const leadStatuses: LeadStatus[] = ["new", "interested", "negotiation"];
+
+export function normalizeLeadStatus(value?: string | null): LeadStatus | null {
+  const normalized = value?.toLowerCase().trim();
+  if (normalized && leadStatuses.includes(normalized as LeadStatus)) {
+    return normalized as LeadStatus;
+  }
+  return null;
+}
+
 export function getLeadStatus(lead: {
+  status?: string | null;
   createdAt: string;
   notes?: string | null;
   requirement?: string | null;
 }): LeadStatus {
+  const stored = normalizeLeadStatus(lead.status);
+  if (stored) return stored;
+
   const text = `${lead.notes ?? ""} ${lead.requirement ?? ""}`;
   if (/negotiat/i.test(text)) return "negotiation";
 
@@ -100,6 +171,31 @@ export function getLeadStatus(lead: {
   if (created > weekAgo) return "new";
 
   return "interested";
+}
+
+export function matchesLeadFilter(
+  lead: {
+    status?: string | null;
+    createdAt: string;
+    notes?: string | null;
+    requirement?: string | null;
+    followUpDate?: string | null;
+    followUpDone: boolean;
+  },
+  filter: LeadFilter,
+): boolean {
+  switch (filter) {
+    case "all":
+      return true;
+    case "due-today":
+      return isDueForFollowUp(lead);
+    case "new":
+      return getLeadStatus(lead) === "new";
+    case "negotiation":
+      return getLeadStatus(lead) === "negotiation";
+    default:
+      return true;
+  }
 }
 
 export function getLeadUrgency(lead: {

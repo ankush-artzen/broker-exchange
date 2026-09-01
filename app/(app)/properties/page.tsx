@@ -8,6 +8,8 @@ import { PropertyDetailSheet } from "@/components/PropertyDetailSheet";
 import { PropertyForm } from "@/components/PropertyForm";
 import { Modal } from "@/components/Modal";
 import { AddButton, AppPage } from "@/components/AppPage";
+import { ListPagination } from "@/components/ListPagination";
+import { usePagination } from "@/hooks/usePagination";
 import { cn, getPropertyStatus } from "@/lib/utils";
 import { House } from "lucide-react";
 
@@ -55,6 +57,9 @@ export default function PropertiesPage() {
       return getPropertyStatus(property) === filter;
     });
   }, [properties, filter]);
+
+  const { page, setPage, totalPages, paginatedItems, pageSize, total } =
+    usePagination(filtered, filter);
 
   const handleCreate = async (data: PropertyFormData) => {
     await api.createProperty(data);
@@ -118,15 +123,24 @@ export default function PropertiesPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-2.5">
-          {filtered.map((property) => (
-            <PropertyCard
-              key={property.id}
-              property={property}
-              onClick={() => setSelected(property)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="space-y-2.5">
+            {paginatedItems.map((property) => (
+              <PropertyCard
+                key={property.id}
+                property={property}
+                onClick={() => setSelected(property)}
+              />
+            ))}
+          </div>
+          <ListPagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+          />
+        </>
       )}
 
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add Property">
