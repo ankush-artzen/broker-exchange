@@ -10,7 +10,7 @@ interface Props {
 
 export function AppPage({ children, title, subtitle, action, header }: Props) {
   return (
-    <div className="px-5 pb-6 pt-5">
+    <div className="px-5 pb-6 pt-5 md:px-8 md:pb-8 md:pt-8 lg:px-10">
       {header ??
         (title ? (
           <header className="mb-4 flex items-center justify-between gap-3">

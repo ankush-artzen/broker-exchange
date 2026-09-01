@@ -92,7 +92,7 @@ export default function LeadsPage() {
       </div>
 
       {loading ? (
-        <div className="space-y-2.5">
+        <div className="grid gap-2.5 lg:grid-cols-2 lg:gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
@@ -113,7 +113,7 @@ export default function LeadsPage() {
         </div>
       ) : (
         <>
-          <div className="space-y-2.5">
+          <div className="grid gap-2.5 lg:grid-cols-2 lg:gap-4">
             {paginatedItems.map((lead) => (
               <LeadCard
                 key={lead.id}

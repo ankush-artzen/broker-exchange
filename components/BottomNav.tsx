@@ -4,15 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { navTabs } from "@/lib/nav-tabs";
 import { QuickAddSheet } from "@/components/QuickAddSheet";
-import { CircleUser, Home, LandPlot, Plus, Users } from "lucide-react";
-
-const tabs = [
-  { href: "/today", label: "Today", icon: Home },
-  { href: "/leads", label: "Leads", icon: Users },
-  { href: "/properties", label: "Properties", icon: LandPlot },
-  { href: "/account", label: "Account", icon: CircleUser },
-];
+import { Plus } from "lucide-react";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -21,9 +15,9 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
         <div className="relative mx-auto flex max-w-lg items-end">
-          {tabs.slice(0, 2).map((tab) => {
+          {navTabs.slice(0, 2).map((tab) => {
             const active = pathname.startsWith(tab.href);
             const Icon = tab.icon;
 
@@ -53,7 +47,7 @@ export function BottomNav() {
             </button>
           </div>
 
-          {tabs.slice(2).map((tab) => {
+          {navTabs.slice(2).map((tab) => {
             const active = pathname.startsWith(tab.href);
             const Icon = tab.icon;
 

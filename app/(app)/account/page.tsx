@@ -66,6 +66,7 @@ export default function AccountPage() {
 
   return (
     <AppPage title="Account" subtitle="Your profile and settings">
+      <div className="md:max-w-2xl">
       <section className="mb-6 overflow-hidden rounded-[14px] border border-border bg-surface shadow-sm">
         <button
           type="button"
@@ -169,6 +170,7 @@ export default function AccountPage() {
           <LogoutButton className="w-full justify-center rounded-lg py-3 text-overdue hover:bg-overdue-tint hover:text-overdue" />
         </div>
       </section>
+      </div>
     </AppPage>
   );
 }

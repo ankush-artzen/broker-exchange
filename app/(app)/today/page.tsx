@@ -119,7 +119,7 @@ export default function TodayPage() {
         </h2>
 
         {loading ? (
-          <div className="space-y-3">
+          <div className="grid gap-3 lg:grid-cols-2 lg:gap-4">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
@@ -144,7 +144,7 @@ export default function TodayPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-3 lg:grid-cols-2 lg:gap-4">
             {sortedLeads.map((lead) => (
               <TodayLeadItem
                 key={lead.id}
