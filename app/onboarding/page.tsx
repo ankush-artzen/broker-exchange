@@ -12,7 +12,9 @@ import {
   Users,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { formErrorBanner } from "@/lib/form-errors";
 import { setStoredUser } from "@/lib/storage";
+import { formatPhone, isValidIndianPhone, sanitizePersonName } from "@/lib/utils";
 
 const features = [
   {
@@ -38,12 +40,33 @@ export default function OnboardingPage() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
+  const updateName = (value: string) => {
+    setName(sanitizePersonName(value));
+    if (error) setError("");
+  };
+
+  const updatePhone = (value: string) => {
+    setPhone(formatPhone(value).slice(0, 10));
+    setPhoneError("");
+    if (error) setError("");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!name.trim() || !phone.trim()) {
-      setError("Please enter your name and phone");
+    setPhoneError("");
+    if (!name.trim()) {
+      setError("Please enter your name");
+      return;
+    }
+    if (!phone.trim()) {
+      setPhoneError("Phone number is required");
+      return;
+    }
+    if (!isValidIndianPhone(phone)) {
+      setPhoneError("Enter a valid 10-digit mobile number");
       return;
     }
     setLoading(true);
@@ -162,27 +185,21 @@ export default function OnboardingPage() {
               </p>
             </div>
 
-            {error && (
-              <p className="mb-4 rounded-xl bg-overdue-tint px-3.5 py-2.5 text-sm text-overdue">
-                {error}
-              </p>
-            )}
+            {error && <p className={`mb-4 ${formErrorBanner}`}>{error}</p>}
 
             <div className="space-y-4">
               <Field
                 label="Your name"
                 value={name}
-                onChange={setName}
+                onChange={updateName}
                 placeholder="Rajesh Kumar"
                 autoComplete="name"
               />
-              <Field
+              <PhoneField
                 label="Phone number"
                 value={phone}
-                onChange={setPhone}
-                type="tel"
-                placeholder="9876543210"
-                autoComplete="tel"
+                onChange={updatePhone}
+                error={phoneError}
               />
             </div>
 
@@ -211,6 +228,46 @@ export default function OnboardingPage() {
           </form>
         </section>
       </div>
+    </div>
+  );
+}
+
+function PhoneField({
+  label,
+  value,
+  onChange,
+  error,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
+        {label}
+      </label>
+      <input
+        type="tel"
+        inputMode="numeric"
+        value={value}
+        maxLength={10}
+        placeholder="9876543210"
+        autoComplete="tel"
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-base text-primary outline-none transition-colors placeholder:text-muted/60 focus:border-primary focus:bg-surface md:py-3 md:text-sm"
+      />
+      {error ? (
+        <p className="mt-1.5 text-[12px] text-red-600">{error}</p>
+      ) : (
+        value &&
+        value.length !== 10 && (
+          <p className="mt-1.5 text-[11px] text-muted">
+            Enter 10-digit mobile number
+          </p>
+        )
+      )}
     </div>
   );
 }

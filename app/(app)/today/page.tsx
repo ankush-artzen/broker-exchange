@@ -10,10 +10,11 @@ import {
   cn,
   formatLongDate,
   getGreeting,
-  isOverdue,
+  isTodayFollowUpTimePassed,
+  shouldShowOnTodayPage,
 } from "@/lib/utils";
+import { LeadCard } from "@/components/LeadCard";
 import { LeadDetailSheet } from "@/components/LeadDetailSheet";
-import { CallWhatsAppButtons } from "@/components/CallWhatsAppButtons";
 import { AppPage } from "@/components/AppPage";
 import { UserAvatar } from "@/components/UserAvatar";
 import { AlertCircle, CircleCheck } from "lucide-react";
@@ -24,6 +25,7 @@ export default function TodayPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Lead | null>(null);
+  const [now, setNow] = useState(() => new Date());
   const pathname = usePathname();
   const [userProfile, setUserProfile] = useState<StoredUserProfile | null>(null);
   const userName = userProfile?.name;
@@ -32,6 +34,11 @@ export default function TodayPage() {
   useEffect(() => {
     setUserProfile(getStoredUserProfile());
   }, [pathname]);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -56,15 +63,18 @@ export default function TodayPage() {
     load();
   }, [load]);
 
-  const { overdue, today, sortedLeads } = useMemo(() => {
-    const overdueLeads = leads.filter((l) => isOverdue(l.followUpDate));
-    const todayLeads = leads.filter((l) => !isOverdue(l.followUpDate));
+  const { dueTodayCount, missedTodayCount, visibleLeads } = useMemo(() => {
+    const visible = leads.filter((lead) => shouldShowOnTodayPage(lead, now));
+    const missed = leads.filter((lead) =>
+      isTodayFollowUpTimePassed(lead, now),
+    );
+
     return {
-      overdue: overdueLeads,
-      today: todayLeads,
-      sortedLeads: [...overdueLeads, ...todayLeads],
+      dueTodayCount: visible.length,
+      missedTodayCount: missed.length,
+      visibleLeads: visible,
     };
-  }, [leads]);
+  }, [leads, now]);
 
   return (
     <AppPage
@@ -90,11 +100,10 @@ export default function TodayPage() {
         </header>
       }
     >
-
       <div className="mb-8 rounded-3xl bg-primary px-4 py-5 shadow-lg shadow-primary/20">
         <div className="grid grid-cols-3 divide-x divide-white/15">
-          <Stat value={today.length} label="Due today" />
-          <Stat value={overdue.length} label="Overdue" highlight />
+          <Stat value={dueTodayCount} label="Due today" />
+          <Stat value={missedTodayCount} label="Time passed" highlight />
           <Stat value={propertiesCount} label="Properties saved" />
         </div>
       </div>
@@ -123,11 +132,11 @@ export default function TodayPage() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-[88px] animate-pulse rounded-2xl bg-surface"
+                className="h-[108px] animate-pulse rounded-[14px] bg-surface"
               />
             ))}
           </div>
-        ) : sortedLeads.length === 0 ? (
+        ) : visibleLeads.length === 0 ? (
           <div className="rounded-2xl bg-surface p-8 text-center shadow-sm">
             <CircleCheck
               size={40}
@@ -135,7 +144,9 @@ export default function TodayPage() {
               className="mx-auto text-secondary"
             />
             <p className="mt-3 font-medium text-primary">All caught up!</p>
-            <p className="text-sm text-muted">No follow-ups due today.</p>
+            <p className="text-sm text-muted">
+              No follow-ups left for today right now.
+            </p>
             <Link
               href="/leads/create"
               className="mt-5 inline-block rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
@@ -145,11 +156,11 @@ export default function TodayPage() {
           </div>
         ) : (
           <div className="grid gap-3 lg:grid-cols-2 lg:gap-4">
-            {sortedLeads.map((lead) => (
-              <TodayLeadItem
+            {visibleLeads.map((lead) => (
+              <LeadCard
                 key={lead.id}
                 lead={lead}
-                onOpen={() => setSelected(lead)}
+                onClick={() => setSelected(lead)}
               />
             ))}
           </div>
@@ -190,64 +201,12 @@ function Stat({
       <p
         className={cn(
           "font-serif text-3xl leading-none",
-          highlight ? "text-overdue" : "text-primary-foreground",
+          highlight ? "text-overdue-muted" : "text-primary-foreground",
         )}
       >
         {value}
       </p>
       <p className="mt-2 text-[11px] leading-tight text-white/55">{label}</p>
-    </div>
-  );
-}
-
-function TodayLeadItem({
-  lead,
-  onOpen,
-}: {
-  lead: Lead;
-  onOpen: () => void;
-}) {
-  const overdue = isOverdue(lead.followUpDate);
-  const whatsappMsg = `Hi ${lead.name}, following up on your property requirement.`;
-  const subtitle = [lead.requirement, lead.location]
-    .filter(Boolean)
-    .join(" • ");
-
-  return (
-    <div className="flex overflow-hidden rounded-2xl bg-surface shadow-sm">
-      <div
-        className={cn(
-          "w-1 shrink-0",
-          overdue ? "bg-overdue" : "bg-today",
-        )}
-      />
-      <div className="flex min-w-0 flex-1 items-center gap-2 p-3 sm:gap-3 sm:p-4">
-        <button
-          type="button"
-          onClick={onOpen}
-          className="min-w-0 flex-1 text-left"
-        >
-          <h3 className="truncate font-semibold text-primary">{lead.name}</h3>
-          {subtitle ? (
-            <p className="mt-0.5 truncate text-sm text-muted">{subtitle}</p>
-          ) : (
-            <p className="mt-0.5 text-sm text-muted">{lead.phone}</p>
-          )}
-        </button>
-        <span
-          className={cn(
-            "shrink-0 text-xs font-medium sm:text-sm",
-            overdue ? "text-overdue" : "text-today",
-          )}
-        >
-          {overdue ? "Overdue" : "Today"}
-        </span>
-        <CallWhatsAppButtons
-          phone={lead.phone}
-          whatsappMessage={whatsappMsg}
-          iconOnly
-        />
-      </div>
     </div>
   );
 }

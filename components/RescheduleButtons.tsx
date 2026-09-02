@@ -22,7 +22,7 @@ export function RescheduleButtons({ onReschedule, loading }: Props) {
           type="button"
           disabled={loading}
           onClick={() => onReschedule(addDays(new Date(), opt.days))}
-          className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 active:bg-emerald-100 disabled:opacity-50"
+          className="rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-background active:bg-background disabled:opacity-50"
         >
           {opt.label}
         </button>

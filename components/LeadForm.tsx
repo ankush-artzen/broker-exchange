@@ -2,7 +2,16 @@
 
 import { useEffect, useState } from "react";
 import type { LeadFormData } from "@/lib/types";
-import { cn, normalizeFollowUpInput, addDays, formatDateKey, isValidIndianPhone, type LeadStatus } from "@/lib/utils";
+import {
+  cn,
+  isValidIndianPhone,
+  isValidPersonName,
+  normalizeFollowUpInput,
+  addDays,
+  toDatetimeLocalValue,
+  sanitizePersonName,
+  type LeadStatus,
+} from "@/lib/utils";
 import { getConfigurationOptions } from "@/lib/constants/property";
 import {
   fieldErrorBorder,
@@ -54,7 +63,9 @@ export function LeadForm({
   const [form, setForm] = useState<LeadFormData>(() => ({
     ...emptyLead,
     ...initial,
-    followUpDate: initial?.followUpDate?.split("T")[0] ?? "",
+    followUpDate: initial?.followUpDate
+      ? toDatetimeLocalValue(initial.followUpDate)
+      : "",
     status: initial?.status ?? "new",
   }));
   const [loading, setLoading] = useState(false);
@@ -67,13 +78,16 @@ export function LeadForm({
     setForm({
       ...emptyLead,
       ...initial,
-      followUpDate: initial?.followUpDate?.split("T")[0] ?? "",
+      followUpDate: initial?.followUpDate
+      ? toDatetimeLocalValue(initial.followUpDate)
+      : "",
       status: initial?.status ?? "new",
     });
   }, [initial]);
 
   const update = (field: keyof LeadFormData, value: string) => {
-    setForm((f) => ({ ...f, [field]: value }));
+    const nextValue = field === "name" ? sanitizePersonName(value) : value;
+    setForm((f) => ({ ...f, [field]: nextValue }));
     if (field in fieldErrors) {
       setFieldErrors((errors) => {
         const next = { ...errors };
@@ -89,6 +103,8 @@ export function LeadForm({
 
     if (!form.name.trim()) {
       errors.name = "Name is required";
+    } else if (!isValidPersonName(form.name)) {
+      errors.name = "Name can only contain letters";
     }
     if (!form.phone.trim()) {
       errors.phone = "Phone is required";

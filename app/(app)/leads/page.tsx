@@ -82,7 +82,7 @@ export default function LeadsPage() {
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-[72px] animate-pulse rounded-[14px] bg-surface"
+              className="h-[108px] animate-pulse rounded-[14px] bg-surface"
             />
           ))}
         </div>

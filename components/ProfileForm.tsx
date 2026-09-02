@@ -12,7 +12,7 @@ import {
   formatMissingFieldsSummary,
   scrollToFirstFieldError,
 } from "@/lib/form-errors";
-import { cn, isValidIndianPhone } from "@/lib/utils";
+import { cn, isValidIndianPhone, isValidPersonName, sanitizePersonName } from "@/lib/utils";
 import { Camera, Loader2 } from "lucide-react";
 import { PhoneField } from "@/components/PhoneField";
 import { UserAvatar } from "./UserAvatar";
@@ -58,6 +58,8 @@ export function ProfileForm({ user, onUpdated }: Props) {
 
     if (!name.trim()) {
       errors.name = "Name is required";
+    } else if (!isValidPersonName(name)) {
+      errors.name = "Name can only contain letters";
     }
     if (!phone.trim()) {
       errors.phone = "Phone number is required";
@@ -182,7 +184,7 @@ export function ProfileForm({ user, onUpdated }: Props) {
         label="Name"
         value={name}
         onChange={(value) => {
-          setName(value);
+          setName(sanitizePersonName(value));
           clearFieldError("name");
         }}
         placeholder="Your name"

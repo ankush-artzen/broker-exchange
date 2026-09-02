@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getUserId, unauthorized } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
-import { parseFollowUpDate } from "@/lib/utils";
+import { parseFollowUpMoment } from "@/lib/utils";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -57,7 +57,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (body.followUpDone !== undefined) data.followUpDone = body.followUpDone;
     if (body.followUpDate !== undefined) {
       data.followUpDate = body.followUpDate
-        ? parseFollowUpDate(body.followUpDate)
+        ? parseFollowUpMoment(body.followUpDate)
         : null;
     }
 

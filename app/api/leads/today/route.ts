@@ -1,20 +1,24 @@
 import { NextRequest } from "next/server";
 import { getUserId, unauthorized } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
-import { endOfToday } from "@/lib/utils";
+import { endOfToday, startOfToday } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   const userId = getUserId(request);
   if (!userId) return unauthorized();
 
   try {
+    const startToday = startOfToday();
     const endToday = endOfToday();
 
     const leads = await prisma.lead.findMany({
       where: {
         userId,
         followUpDone: false,
-        followUpDate: { lte: endToday },
+        followUpDate: {
+          gte: startToday,
+          lte: endToday,
+        },
       },
       orderBy: { followUpDate: "asc" },
     });

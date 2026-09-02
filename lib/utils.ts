@@ -13,6 +13,16 @@ export function isValidIndianPhone(phone: string): boolean {
   return normalizeIndianPhone(phone).length === 10;
 }
 
+export function sanitizePersonName(name: string): string {
+  return name.replace(/[^\p{L}\s]/gu, "");
+}
+
+export function isValidPersonName(name: string): boolean {
+  const trimmed = name.trim();
+  if (!trimmed) return false;
+  return /^[\p{L}\s]+$/u.test(trimmed);
+}
+
 export function phoneDialLink(phone: string): string {
   const digits = formatPhone(phone);
   return digits ? `tel:+${digits.startsWith("91") ? digits : `91${digits}`}` : "#";
@@ -76,6 +86,33 @@ export function formatDate(date: string | Date | null | undefined): string {
   });
 }
 
+export function formatFollowUpDateTime(
+  date: string | Date | null | undefined,
+): { date: string; time: string | null } {
+  if (!date) return { date: "Not set", time: null };
+
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return { date: "—", time: null };
+
+  const datePart = d.toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  const hasTime = followUpHasTime(d);
+  const timePart = hasTime
+    ? d.toLocaleTimeString("en-IN", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })
+    : null;
+
+  return { date: datePart, time: timePart };
+}
+
 export function formatCurrency(value: string | null | undefined): string {
   if (!value) return "—";
   return value;
@@ -96,51 +133,92 @@ export function parseFollowUpDate(
     return Number.isNaN(value.getTime()) ? null : value;
   }
 
-  const isoDate = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (isoDate) {
-    return new Date(+isoDate[1], +isoDate[2] - 1, +isoDate[3]);
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [, y, m, d] = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/)!;
+    return new Date(+y, +m - 1, +d);
   }
 
-  const parsed = new Date(value);
+  const parsed = new Date(trimmed);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function parseFollowUpMoment(
+  value: string | Date | null | undefined,
+): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return parseFollowUpDate(trimmed);
+  }
+
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function followUpHasTime(date: Date): boolean {
+  return date.getHours() !== 0 || date.getMinutes() !== 0;
 }
 
 export function toLocalDateKey(
   date: string | Date | null | undefined,
 ): string {
   const d =
-    typeof date === "string" ? parseFollowUpDate(date) : date ?? null;
+    typeof date === "string" ? parseFollowUpMoment(date) : date ?? null;
   if (!d || Number.isNaN(d.getTime())) return "";
   return formatDateKey(d);
+}
+
+export function toDatetimeLocalValue(
+  value: string | Date | null | undefined,
+): string {
+  const d = parseFollowUpMoment(value);
+  if (!d || Number.isNaN(d.getTime())) return "";
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 export function normalizeFollowUpInput(input: string): string | null {
   const trimmed = input.trim();
   if (!trimmed) return null;
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-
   const lower = trimmed.toLowerCase();
   const today = startOfToday();
-  if (/\btoday\b/.test(lower)) return formatDateKey(today);
-  if (/\btomorrow\b/.test(lower)) return formatDateKey(addDays(today, 1));
+  if (/\btoday\b/.test(lower)) return today.toISOString();
+  if (/\btomorrow\b/.test(lower)) return addDays(today, 1).toISOString();
 
-  const parsed = parseFollowUpDate(trimmed);
-  return parsed ? formatDateKey(parsed) : null;
+  const parsed = parseFollowUpMoment(trimmed);
+  return parsed ? parsed.toISOString() : null;
 }
 
 export function isOverdue(followUpDate: string | null | undefined): boolean {
-  if (!followUpDate) return false;
-  const key = toLocalDateKey(followUpDate);
-  if (!key) return false;
-  return key < toLocalDateKey(new Date());
+  const d = parseFollowUpMoment(followUpDate);
+  if (!d) return false;
+
+  const now = new Date();
+
+  if (followUpHasTime(d)) {
+    return now.getTime() > d.getTime();
+  }
+
+  const key = formatDateKey(d);
+  return key < formatDateKey(now);
 }
 
 export function isToday(date: string | null | undefined): boolean {
-  if (!date) return false;
-  const key = toLocalDateKey(date);
-  if (!key) return false;
-  return key === toLocalDateKey(new Date());
+  const d = parseFollowUpMoment(date);
+  if (!d) return false;
+  return formatDateKey(d) === formatDateKey(new Date());
 }
 
 export function isDueForFollowUp(lead: {
@@ -148,7 +226,8 @@ export function isDueForFollowUp(lead: {
   followUpDone: boolean;
 }): boolean {
   if (!lead.followUpDate || lead.followUpDone) return false;
-  return isOverdue(lead.followUpDate) || isToday(lead.followUpDate);
+  const urgency = getLeadUrgency(lead);
+  return urgency === "overdue" || urgency === "due";
 }
 
 export type LeadStatus = "new" | "interested" | "negotiation";
@@ -214,9 +293,59 @@ export function getLeadUrgency(lead: {
   followUpDone: boolean;
 }): "overdue" | "due" | "upcoming" | "none" {
   if (!lead.followUpDate || lead.followUpDone) return "none";
+
+  const d = parseFollowUpMoment(lead.followUpDate);
+  if (!d) return "none";
+
+  const now = new Date();
+
+  if (followUpHasTime(d)) {
+    if (now.getTime() > d.getTime()) return "overdue";
+    if (isToday(lead.followUpDate)) return "due";
+    return "upcoming";
+  }
+
   if (isOverdue(lead.followUpDate)) return "overdue";
   if (isToday(lead.followUpDate)) return "due";
   return "upcoming";
+}
+
+/** Today page: follow-up is today and scheduled time has not passed yet. */
+export function shouldShowOnTodayPage(
+  lead: {
+    followUpDate?: string | null;
+    followUpDone: boolean;
+  },
+  now: Date = new Date(),
+): boolean {
+  if (!lead.followUpDate || lead.followUpDone) return false;
+  if (!isToday(lead.followUpDate)) return false;
+
+  const d = parseFollowUpMoment(lead.followUpDate);
+  if (!d) return false;
+
+  if (followUpHasTime(d)) {
+    return now.getTime() <= d.getTime();
+  }
+
+  return true;
+}
+
+/** Today follow-up with a set time that has already passed (hidden from Today list). */
+export function isTodayFollowUpTimePassed(
+  lead: {
+    followUpDate?: string | null;
+    followUpDone: boolean;
+  },
+  now: Date = new Date(),
+): boolean {
+  if (!lead.followUpDate || lead.followUpDone) return false;
+  if (!isToday(lead.followUpDate)) return false;
+
+  const d = parseFollowUpMoment(lead.followUpDate);
+  if (!d || !followUpHasTime(d)) return false;
+
+  return now.getTime() > d.getTime();
 }
 
 export type PropertyStatus = "available" | "reserved";
