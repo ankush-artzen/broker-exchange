@@ -5,6 +5,29 @@ import { prisma } from "@/lib/prisma";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  const userId = getUserId(request);
+  if (!userId) return unauthorized();
+
+  const { id } = await params;
+
+  try {
+    const property = await prisma.property.findFirst({ where: { id, userId } });
+    if (!property) {
+      return Response.json({ error: "Property not found" }, { status: 404 });
+    }
+
+    return Response.json({
+      ...property,
+      createdAt: property.createdAt.toISOString(),
+      updatedAt: property.updatedAt.toISOString(),
+    });
+  } catch (error) {
+    console.error("get property error:", error);
+    return Response.json({ error: "Failed to fetch property" }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const userId = getUserId(request);
   if (!userId) return unauthorized();

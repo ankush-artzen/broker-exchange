@@ -6,7 +6,7 @@
   --surface: #ffffff;
   --muted: #6b7280;
 
-  --primary: #7ea1f1;
+  --primary: #D4AF37 ;
   --primary-foreground: #ffffff;
 
   --secondary: #a9762a;
@@ -14,9 +14,9 @@
   --secondary-dark: #8c6222;
   --secondary-tint: #f3e9da;
 
-  --overdue: #b23a2e;
-  --overdue-muted: #e8938a;
-  --overdue-tint: #f7e4e1;
+  --overdue: #fce8e8;
+  --overdue-muted: #A52A2A;
+  --overdue-tint: #fce8e8;
 
   --today: #c97c1d;
   --today-tint: #fbedda;

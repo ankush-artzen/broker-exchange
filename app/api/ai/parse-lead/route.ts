@@ -72,6 +72,23 @@ Today is ${new Date().toISOString().split("T")[0]}. If they say "tomorrow", use 
     return Response.json(parsed);
   } catch (error) {
     console.error("parse-lead error:", error);
-    return Response.json({ error: "Failed to parse lead" }, { status: 500 });
+
+    const status =
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 401
+        ? 503
+        : 500;
+
+    const message =
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 401
+        ? "AI service misconfigured — check ANTHROPIC_API_KEY in .env"
+        : "Failed to parse lead";
+
+    return Response.json({ error: message }, { status });
   }
 }

@@ -60,12 +60,10 @@ export function SidebarNav() {
         open={quickAddOpen}
         onClose={() => setQuickAddOpen(false)}
         onAddLead={() => {
-          sessionStorage.setItem("quick-add", "lead");
-          router.push("/leads");
+          router.push("/leads/create");
         }}
         onAddProperty={() => {
-          sessionStorage.setItem("quick-add", "property");
-          router.push("/properties");
+          router.push("/properties/new");
         }}
       />
     </>

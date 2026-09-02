@@ -137,7 +137,7 @@ export default function TodayPage() {
             <p className="mt-3 font-medium text-primary">All caught up!</p>
             <p className="text-sm text-muted">No follow-ups due today.</p>
             <Link
-              href="/leads"
+              href="/leads/create"
               className="mt-5 inline-block rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
             >
               Add a lead
@@ -190,7 +190,7 @@ function Stat({
       <p
         className={cn(
           "font-serif text-3xl leading-none",
-          highlight ? "text-overdue-muted" : "text-primary-foreground",
+          highlight ? "text-overdue" : "text-primary-foreground",
         )}
       >
         {value}

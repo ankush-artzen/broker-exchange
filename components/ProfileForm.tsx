@@ -5,12 +5,30 @@ import Image from "next/image";
 import type { User } from "@/lib/types";
 import { api } from "@/lib/api";
 import { getStoredUserId, setStoredUser } from "@/lib/storage";
+import {
+  fieldErrorBorder,
+  fieldErrorText,
+  formErrorBanner,
+  formatMissingFieldsSummary,
+  scrollToFirstFieldError,
+} from "@/lib/form-errors";
+import { cn, isValidIndianPhone } from "@/lib/utils";
 import { Camera, Loader2 } from "lucide-react";
+import { PhoneField } from "@/components/PhoneField";
 import { UserAvatar } from "./UserAvatar";
 
 interface Props {
   user: User;
   onUpdated: (user: User) => void;
+}
+
+type ProfileField = "name" | "phone";
+
+function mapApiError(message: string): Partial<Record<ProfileField, string>> {
+  const lower = message.toLowerCase();
+  if (lower.includes("phone")) return { phone: message };
+  if (lower.includes("name")) return { name: message };
+  return {};
 }
 
 export function ProfileForm({ user, onUpdated }: Props) {
@@ -21,6 +39,34 @@ export function ProfileForm({ user, onUpdated }: Props) {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<ProfileField, string>>
+  >({});
+
+  const clearFieldError = (field: ProfileField) => {
+    setFieldErrors((errors) => {
+      if (!errors[field]) return errors;
+      const next = { ...errors };
+      delete next[field];
+      return next;
+    });
+    if (error) setError("");
+  };
+
+  const validate = () => {
+    const errors: Partial<Record<ProfileField, string>> = {};
+
+    if (!name.trim()) {
+      errors.name = "Name is required";
+    }
+    if (!phone.trim()) {
+      errors.phone = "Phone number is required";
+    } else if (!isValidIndianPhone(phone)) {
+      errors.phone = "Enter a valid 10-digit mobile number";
+    }
+
+    return errors;
+  };
 
   const handlePhoto = async (files: FileList | null) => {
     const file = files?.[0];
@@ -42,16 +88,23 @@ export function ProfileForm({ user, onUpdated }: Props) {
     e.preventDefault();
     setError("");
 
-    if (!name.trim()) {
-      setError("Name is required");
+    const errors = validate();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      const labels: Record<ProfileField, string> = {
+        name: "Name",
+        phone: "Phone",
+      };
+      setError(
+        formatMissingFieldsSummary(
+          Object.keys(errors).map((key) => labels[key as ProfileField]),
+        ),
+      );
+      scrollToFirstFieldError();
       return;
     }
 
-    if (!phone.trim()) {
-      setError("Phone number is required");
-      return;
-    }
-
+    setFieldErrors({});
     setSaving(true);
     try {
       const updated = await api.updateProfile({
@@ -71,7 +124,14 @@ export function ProfileForm({ user, onUpdated }: Props) {
 
       onUpdated(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update profile");
+      const message =
+        err instanceof Error ? err.message : "Failed to update profile";
+      const apiFieldErrors = mapApiError(message);
+      if (Object.keys(apiFieldErrors).length > 0) {
+        setFieldErrors(apiFieldErrors);
+        scrollToFirstFieldError();
+      }
+      setError(message);
     } finally {
       setSaving(false);
     }
@@ -79,11 +139,7 @@ export function ProfileForm({ user, onUpdated }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <p className="rounded-lg bg-overdue-tint px-3 py-2 text-sm text-overdue">
-          {error}
-        </p>
-      )}
+      {error && <p className={formErrorBanner}>{error}</p>}
 
       <div className="flex flex-col items-center">
         <button
@@ -122,13 +178,25 @@ export function ProfileForm({ user, onUpdated }: Props) {
         />
       </div>
 
-      <Field label="Name" value={name} onChange={setName} placeholder="Your name" />
       <Field
-        label="Phone"
+        label="Name"
+        value={name}
+        onChange={(value) => {
+          setName(value);
+          clearFieldError("name");
+        }}
+        placeholder="Your name"
+        error={fieldErrors.name}
+      />
+      <PhoneField
         value={phone}
-        onChange={setPhone}
-        type="tel"
-        placeholder="9876543210"
+        onChange={(value) => {
+          setPhone(value);
+          clearFieldError("phone");
+        }}
+        label="Phone"
+        variant="add"
+        error={fieldErrors.phone}
       />
 
       <button
@@ -148,15 +216,17 @@ function Field({
   onChange,
   type = "text",
   placeholder,
+  error,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   type?: string;
   placeholder?: string;
+  error?: string;
 }) {
   return (
-    <div>
+    <div data-field-error={error ? "true" : undefined}>
       <label className="mb-1.5 block text-xs font-semibold text-muted">
         {label}
       </label>
@@ -165,8 +235,12 @@ function Field({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-[10px] border border-border bg-surface px-3 py-2.5 text-sm text-primary outline-none focus:border-primary"
+        className={cn(
+          "w-full rounded-[10px] border border-border bg-surface px-3 py-2.5 text-sm text-primary outline-none focus:border-primary",
+          error && fieldErrorBorder,
+        )}
       />
+      {error && <p className={fieldErrorText}>{error}</p>}
     </div>
   );
 }

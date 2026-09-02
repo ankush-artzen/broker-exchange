@@ -56,6 +56,10 @@ export const api = {
     return request<Lead[]>("/api/leads");
   },
 
+  getLead(id: string) {
+    return request<Lead>(`/api/leads/${id}`);
+  },
+
   getTodayLeads() {
     return request<Lead[]>("/api/leads/today");
   },
@@ -82,6 +86,10 @@ export const api = {
 
   getProperties() {
     return request<Property[]>("/api/properties");
+  },
+
+  getProperty(id: string) {
+    return request<Property>(`/api/properties/${id}`);
   },
 
   createProperty(data: PropertyFormData) {

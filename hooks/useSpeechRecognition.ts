@@ -3,12 +3,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SpeechLanguage } from "@/lib/types";
 
+interface SpeechRecognitionResult {
+  isFinal: boolean;
+  length: number;
+  [index: number]: { transcript: string };
+}
+
 interface SpeechRecognitionResultList {
   length: number;
-  [index: number]: { [index: number]: { transcript: string } };
+  [index: number]: SpeechRecognitionResult;
 }
 
 interface SpeechRecognitionEvent {
+  resultIndex: number;
   results: SpeechRecognitionResultList;
 }
 
@@ -35,6 +42,7 @@ export function useSpeechRecognition(language: SpeechLanguage) {
   const [listening, setListening] = useState(false);
   const [supported, setSupported] = useState(true);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const finalTranscriptRef = useRef("");
 
   useEffect(() => {
     const SpeechRecognition =
@@ -50,25 +58,37 @@ export function useSpeechRecognition(language: SpeechLanguage) {
     recognition.lang = language;
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let text = "";
-      for (let i = 0; i < event.results.length; i++) {
-        text += event.results[i][0].transcript;
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        const chunk = result[0].transcript;
+        if (result.isFinal) {
+          finalTranscriptRef.current += chunk;
+        } else {
+          interim += chunk;
+        }
       }
-      setTranscript(text.trim());
+      setTranscript((finalTranscriptRef.current + interim).trim());
     };
 
     recognition.onerror = () => setListening(false);
     recognition.onend = () => setListening(false);
 
     recognitionRef.current = recognition;
+    finalTranscriptRef.current = "";
 
     return () => {
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.onend = null;
       recognition.stop();
+      recognitionRef.current = null;
     };
   }, [language]);
 
   const start = useCallback(() => {
     if (!recognitionRef.current) return;
+    finalTranscriptRef.current = "";
     setTranscript("");
     setListening(true);
     try {
@@ -83,5 +103,17 @@ export function useSpeechRecognition(language: SpeechLanguage) {
     setListening(false);
   }, []);
 
-  return { transcript, listening, supported, start, stop, setTranscript };
+  const clearTranscript = useCallback(() => {
+    finalTranscriptRef.current = "";
+    setTranscript("");
+  }, []);
+
+  return {
+    transcript,
+    listening,
+    supported,
+    start,
+    stop,
+    setTranscript: clearTranscript,
+  };
 }

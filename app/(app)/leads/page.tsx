@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Lead, LeadFormData } from "@/lib/types";
+import { useRouter } from "next/navigation";
+import type { Lead } from "@/lib/types";
 import { api } from "@/lib/api";
 import { LeadCard } from "@/components/LeadCard";
 import { LeadDetailSheet } from "@/components/LeadDetailSheet";
-import { VoiceLeadCapture } from "@/components/VoiceLeadCapture";
 import { AddButton, AppPage } from "@/components/AppPage";
 import { ListPagination } from "@/components/ListPagination";
 import { usePagination } from "@/hooks/usePagination";
@@ -24,10 +24,10 @@ const filters: { id: LeadFilter; label: string }[] = [
 ];
 
 export default function LeadsPage() {
+  const router = useRouter();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Lead | null>(null);
-  const [voiceOpen, setVoiceOpen] = useState(false);
   const [filter, setFilter] = useState<LeadFilter>("all");
 
   const load = useCallback(async () => {
@@ -46,13 +46,6 @@ export default function LeadsPage() {
     load();
   }, [load]);
 
-  useEffect(() => {
-    if (sessionStorage.getItem("quick-add") === "lead") {
-      sessionStorage.removeItem("quick-add");
-      setVoiceOpen(true);
-    }
-  }, []);
-
   const filtered = useMemo(() => {
     return leads.filter((lead) => matchesLeadFilter(lead, filter));
   }, [leads, filter]);
@@ -60,19 +53,12 @@ export default function LeadsPage() {
   const { page, setPage, totalPages, paginatedItems, pageSize, total } =
     usePagination(filtered, filter);
 
-  const handleCreate = async (data: LeadFormData) => {
-    await api.createLead(data);
-    setVoiceOpen(false);
-    load();
-  };
-
   return (
     <AppPage
       title="Leads"
       subtitle={`${leads.length} ${leads.length === 1 ? "lead" : "leads"}`}
-      action={<AddButton onClick={() => setVoiceOpen(true)} />}
+      action={<AddButton onClick={() => router.push("/leads/create")} />}
     >
-
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
         {filters.map((chip) => (
           <button
@@ -131,12 +117,6 @@ export default function LeadsPage() {
           />
         </>
       )}
-
-      <VoiceLeadCapture
-        open={voiceOpen}
-        onClose={() => setVoiceOpen(false)}
-        onSave={handleCreate}
-      />
 
       <LeadDetailSheet
         lead={selected}

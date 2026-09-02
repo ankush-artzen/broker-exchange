@@ -1,12 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Property, PropertyFormData } from "@/lib/types";
+import { useRouter } from "next/navigation";
+import type { Property } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PropertyCard } from "@/components/PropertyCard";
 import { PropertyDetailSheet } from "@/components/PropertyDetailSheet";
-import { PropertyForm } from "@/components/PropertyForm";
-import { Modal } from "@/components/Modal";
 import { AddButton, AppPage } from "@/components/AppPage";
 import { ListPagination } from "@/components/ListPagination";
 import { usePagination } from "@/hooks/usePagination";
@@ -22,10 +21,10 @@ const filters: { id: PropertyFilter; label: string }[] = [
 ];
 
 export default function PropertiesPage() {
+  const router = useRouter();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Property | null>(null);
-  const [addOpen, setAddOpen] = useState(false);
   const [filter, setFilter] = useState<PropertyFilter>("all");
 
   const load = useCallback(async () => {
@@ -44,13 +43,6 @@ export default function PropertiesPage() {
     load();
   }, [load]);
 
-  useEffect(() => {
-    if (sessionStorage.getItem("quick-add") === "property") {
-      sessionStorage.removeItem("quick-add");
-      setAddOpen(true);
-    }
-  }, []);
-
   const filtered = useMemo(() => {
     return properties.filter((property) => {
       if (filter === "all") return true;
@@ -60,12 +52,6 @@ export default function PropertiesPage() {
 
   const { page, setPage, totalPages, paginatedItems, pageSize, total } =
     usePagination(filtered, filter);
-
-  const handleCreate = async (data: PropertyFormData) => {
-    await api.createProperty(data);
-    setAddOpen(false);
-    load();
-  };
 
   const countLabel = `${properties.length} ${properties.length === 1 ? "property" : "properties"}`;
 
@@ -78,7 +64,7 @@ export default function PropertiesPage() {
           </h1>
           <div className="flex shrink-0 items-center gap-2">
             <span className="text-[12.5px] text-muted">{countLabel}</span>
-            <AddButton onClick={() => setAddOpen(true)} />
+            <AddButton onClick={() => router.push("/properties/new")} />
           </div>
         </header>
       }
@@ -143,22 +129,11 @@ export default function PropertiesPage() {
         </>
       )}
 
-      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add Property">
-        <PropertyForm
-          onSubmit={handleCreate}
-          onCancel={() => setAddOpen(false)}
-        />
-      </Modal>
-
       <PropertyDetailSheet
         property={selected}
         open={!!selected}
         onClose={() => {
           setSelected(null);
-          load();
-        }}
-        onUpdate={async (id, data) => {
-          await api.updateProperty(id, data);
           load();
         }}
         onDelete={async (id) => {

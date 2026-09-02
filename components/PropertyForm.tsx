@@ -3,6 +3,18 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import type { PropertyFormData } from "@/lib/types";
+import { LocationPicker } from "@/components/LocationPicker";
+import { PriceField } from "@/components/PriceField";
+import { AreaField } from "@/components/AreaField";
+import { getConfigurationOptions } from "@/lib/constants/property";
+import {
+  fieldErrorBorder,
+  fieldErrorText,
+  formatMissingFieldsSummary,
+  scrollToFirstFieldError,
+  formErrorBanner,
+} from "@/lib/form-errors";
+import { cn } from "@/lib/utils";
 import { Loader2, Plus, X } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -30,6 +42,8 @@ export function PropertyForm({
   onCancel,
   submitLabel = "Save Property",
 }: Props) {
+  type PropertyField = "title" | "location" | "price";
+
   const [form, setForm] = useState<PropertyFormData>({
     ...emptyProperty,
     ...initial,
@@ -38,10 +52,37 @@ export function PropertyForm({
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<PropertyField, string>>
+  >({});
   const fileRef = useRef<HTMLInputElement>(null);
 
   const update = (field: keyof PropertyFormData, value: string) => {
     setForm((f) => ({ ...f, [field]: value }));
+    if (field in fieldErrors) {
+      setFieldErrors((errors) => {
+        const next = { ...errors };
+        delete next[field as PropertyField];
+        return next;
+      });
+    }
+    if (error) setError("");
+  };
+
+  const validate = () => {
+    const errors: Partial<Record<PropertyField, string>> = {};
+
+    if (!form.title.trim()) {
+      errors.title = "Property name is required";
+    }
+    if (!form.location.trim()) {
+      errors.location = "Location is required";
+    }
+    if (!form.price.trim()) {
+      errors.price = "Price is required";
+    }
+
+    return errors;
   };
 
   const handlePhotos = async (files: FileList | null) => {
@@ -68,10 +109,25 @@ export function PropertyForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!form.title.trim() || !form.location.trim() || !form.price.trim()) {
-      setError("Title, location, and price are required");
+
+    const errors = validate();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      const labels: Record<PropertyField, string> = {
+        title: "Property Name",
+        location: "Location",
+        price: "Price",
+      };
+      setError(
+        formatMissingFieldsSummary(
+          Object.keys(errors).map((key) => labels[key as PropertyField]),
+        ),
+      );
+      scrollToFirstFieldError();
       return;
     }
+
+    setFieldErrors({});
     setLoading(true);
     try {
       await onSubmit(form);
@@ -84,15 +140,42 @@ export function PropertyForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
-      )}
+      {error && <p className={formErrorBanner}>{error}</p>}
 
-      <Field label="Title *" value={form.title} onChange={(v) => update("title", v)} />
-      <Field label="Location *" value={form.location} onChange={(v) => update("location", v)} />
-      <Field label="Price *" value={form.price} onChange={(v) => update("price", v)} placeholder="₹50L, ₹1.2Cr..." />
-      <Field label="Configuration" value={form.configuration ?? ""} onChange={(v) => update("configuration", v)} placeholder="2BHK, 3BHK..." />
-      <Field label="Area" value={form.area ?? ""} onChange={(v) => update("area", v)} placeholder="1200 sq ft" />
+      <Field
+        label="Property Name *"
+        value={form.title}
+        onChange={(v) => update("title", v)}
+        error={fieldErrors.title}
+      />
+      <LocationPicker
+        value={form.location}
+        onChange={(v) => update("location", v)}
+        error={fieldErrors.location}
+      />
+      <PriceField
+        value={form.price}
+        onChange={(v) => update("price", v)}
+        error={fieldErrors.price}
+      />
+      <div>
+        <label className="mb-1 block text-sm font-medium text-zinc-700">
+          Configuration
+        </label>
+        <select
+          value={form.configuration ?? ""}
+          onChange={(e) => update("configuration", e.target.value)}
+          className="w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+        >
+          <option value="">Select configuration</option>
+          {getConfigurationOptions(form.configuration).map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </div>
+      <AreaField value={form.area ?? ""} onChange={(v) => update("area", v)} />
       <div>
         <label className="mb-1 block text-sm font-medium text-zinc-700">Availability</label>
         <select
@@ -162,7 +245,7 @@ export function PropertyForm({
         <button
           type="submit"
           disabled={loading || uploading}
-          className="flex-1 rounded-xl bg-emerald-600 py-3 font-medium text-white disabled:opacity-50"
+          className="flex-1 rounded-xl bg-primary py-3 font-medium text-white disabled:opacity-50"
         >
           {loading ? "Saving..." : submitLabel}
         </button>
@@ -176,21 +259,27 @@ function Field({
   value,
   onChange,
   placeholder,
+  error,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  error?: string;
 }) {
   return (
-    <div>
+    <div data-field-error={error ? "true" : undefined}>
       <label className="mb-1 block text-sm font-medium text-zinc-700">{label}</label>
       <input
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+        className={cn(
+          "w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100",
+          error && fieldErrorBorder,
+        )}
       />
+      {error && <p className={fieldErrorText}>{error}</p>}
     </div>
   );
 }

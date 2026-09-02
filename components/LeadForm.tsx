@@ -2,7 +2,19 @@
 
 import { useEffect, useState } from "react";
 import type { LeadFormData } from "@/lib/types";
-import { cn, normalizeFollowUpInput, type LeadStatus } from "@/lib/utils";
+import { cn, normalizeFollowUpInput, addDays, formatDateKey, isValidIndianPhone, type LeadStatus } from "@/lib/utils";
+import { getConfigurationOptions } from "@/lib/constants/property";
+import {
+  fieldErrorBorder,
+  fieldErrorText,
+  formatMissingFieldsSummary,
+  scrollToFirstFieldError,
+  formErrorBanner,
+} from "@/lib/form-errors";
+import { PhoneField } from "@/components/PhoneField";
+import { PriceField } from "@/components/PriceField";
+import { LocationPicker } from "@/components/LocationPicker";
+import { CalendarDays } from "lucide-react";
 
 const emptyLead: LeadFormData = {
   name: "",
@@ -37,6 +49,8 @@ export function LeadForm({
   submitLabel = "Save lead",
   variant = "default",
 }: Props) {
+  type LeadField = "name" | "phone";
+
   const [form, setForm] = useState<LeadFormData>(() => ({
     ...emptyLead,
     ...initial,
@@ -45,6 +59,9 @@ export function LeadForm({
   }));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<LeadField, string>>
+  >({});
 
   useEffect(() => {
     setForm({
@@ -57,16 +74,52 @@ export function LeadForm({
 
   const update = (field: keyof LeadFormData, value: string) => {
     setForm((f) => ({ ...f, [field]: value }));
+    if (field in fieldErrors) {
+      setFieldErrors((errors) => {
+        const next = { ...errors };
+        delete next[field as LeadField];
+        return next;
+      });
+    }
+    if (error) setError("");
+  };
+
+  const validate = () => {
+    const errors: Partial<Record<LeadField, string>> = {};
+
+    if (!form.name.trim()) {
+      errors.name = "Name is required";
+    }
+    if (!form.phone.trim()) {
+      errors.phone = "Phone is required";
+    } else if (!isValidIndianPhone(form.phone)) {
+      errors.phone = "Enter a valid 10-digit mobile number";
+    }
+
+    return errors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!form.name.trim() || !form.phone.trim()) {
-      setError("Name and phone are required");
+
+    const errors = validate();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      const labels: Record<LeadField, string> = {
+        name: "Name",
+        phone: "Phone",
+      };
+      setError(
+        formatMissingFieldsSummary(
+          Object.keys(errors).map((key) => labels[key as LeadField]),
+        ),
+      );
+      scrollToFirstFieldError();
       return;
     }
 
+    setFieldErrors({});
     const followUpDate = normalizeFollowUpInput(form.followUpDate ?? "");
 
     setLoading(true);
@@ -88,7 +141,7 @@ export function LeadForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-3.5">
       {error && (
-        <p className="rounded-lg bg-overdue-tint px-3 py-2 text-sm text-overdue">
+        <p className={formErrorBanner}>
           {error}
         </p>
       )}
@@ -99,85 +152,43 @@ export function LeadForm({
         onChange={(v) => update("name", v)}
         placeholder={isAdd ? "Full name" : undefined}
         variant={variant}
+        error={fieldErrors.name}
       />
 
-      {isAdd ? (
-        <div className="flex gap-2.5">
-          <Field
-            label="Phone"
-            value={form.phone}
-            onChange={(v) => update("phone", v)}
-            type="tel"
-            placeholder="10-digit number"
-            variant={variant}
-            className="flex-1"
-          />
-          <Field
-            label="Budget"
-            value={form.budget ?? ""}
-            onChange={(v) => update("budget", v)}
-            placeholder="e.g. 80L - 1Cr"
-            variant={variant}
-            className="flex-1"
-          />
-        </div>
-      ) : (
-        <>
-          <Field
-            label="Phone *"
-            value={form.phone}
-            onChange={(v) => update("phone", v)}
-            type="tel"
-            variant={variant}
-          />
-          <Field
-            label="Requirement"
-            value={form.requirement ?? ""}
-            onChange={(v) => update("requirement", v)}
-            placeholder="2BHK, shop, plot..."
-            variant={variant}
-          />
-          <Field
-            label="Location"
-            value={form.location ?? ""}
-            onChange={(v) => update("location", v)}
-            variant={variant}
-          />
-          <Field
-            label="Budget"
-            value={form.budget ?? ""}
-            onChange={(v) => update("budget", v)}
-            variant={variant}
-          />
-          <Field
-            label="Source"
-            value={form.source ?? ""}
-            onChange={(v) => update("source", v)}
-            placeholder="Referral, portal..."
-            variant={variant}
-          />
-        </>
-      )}
+      <PhoneField
+        value={form.phone}
+        onChange={(v) => update("phone", v)}
+        label={isAdd ? "Phone" : "Phone *"}
+        variant={variant}
+        error={fieldErrors.phone}
+      />
 
-      {isAdd && (
-        <div className="flex gap-2.5">
-          <Field
-            label="Requirement"
-            value={form.requirement ?? ""}
-            onChange={(v) => update("requirement", v)}
-            placeholder="e.g. 3 BHK"
-            variant={variant}
-            className="flex-1"
-          />
-          <Field
-            label="Location"
-            value={form.location ?? ""}
-            onChange={(v) => update("location", v)}
-            placeholder="e.g. Sector 66"
-            variant={variant}
-            className="flex-1"
-          />
-        </div>
+      <RequirementField
+        value={form.requirement ?? ""}
+        onChange={(v) => update("requirement", v)}
+        variant={variant}
+      />
+
+      <LocationPicker
+        value={form.location ?? ""}
+        onChange={(v) => update("location", v)}
+      />
+
+      <PriceField
+        value={form.budget ?? ""}
+        onChange={(v) => update("budget", v)}
+        label="Budget"
+        variant={variant}
+      />
+
+      {!isAdd && (
+        <Field
+          label="Source"
+          value={form.source ?? ""}
+          onChange={(v) => update("source", v)}
+          placeholder="Referral, portal..."
+          variant={variant}
+        />
       )}
 
       <div>
@@ -203,12 +214,10 @@ export function LeadForm({
         </div>
       </div>
 
-      <Field
+      <FollowUpDateField
         label={isAdd ? "Next follow-up" : "Follow-up date"}
         value={form.followUpDate ?? ""}
         onChange={(v) => update("followUpDate", v)}
-        type={isAdd ? "text" : "date"}
-        placeholder={isAdd ? "e.g. Tomorrow, 10:30 AM" : undefined}
         variant={variant}
       />
 
@@ -246,6 +255,198 @@ export function LeadForm({
   );
 }
 
+function RequirementField({
+  value,
+  onChange,
+  variant = "default",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  variant?: "default" | "add";
+}) {
+  const labelClass =
+    variant === "add"
+      ? "mb-1.5 block text-xs font-semibold text-muted"
+      : "mb-1 block text-sm font-medium text-zinc-700";
+
+  const selectClass =
+    variant === "add"
+      ? "w-full rounded-[10px] border border-border bg-surface px-3 py-2.5 text-sm text-primary outline-none focus:border-primary"
+      : "w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
+
+  return (
+    <div>
+      <label className={labelClass}>Requirement</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={selectClass}
+      >
+        <option value="">Select requirement</option>
+        {getConfigurationOptions(value).map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// function FollowUpDateField({
+//   label,
+//   value,
+//   onChange,
+//   variant = "default",
+// }: {
+//   label: string;
+//   value: string;
+//   onChange: (v: string) => void;
+//   variant?: "default" | "add";
+// }) {
+//   const inputClass =
+//     variant === "add"
+//       ? "w-full rounded-[10px] border border-border bg-surface py-2.5 pl-3 pr-10 text-sm text-primary outline-none focus:border-primary [color-scheme:light]"
+//       : "w-full rounded-xl border border-zinc-200 py-2.5 pl-3 pr-10 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 [color-scheme:light]";
+
+//   const labelClass =
+//     variant === "add"
+//       ? "mb-1.5 block text-xs font-semibold text-muted"
+//       : "mb-1 block text-sm font-medium text-zinc-700";
+
+//   const shortcuts = [
+//     { label: "Today", days: 0 },
+//     { label: "Tomorrow", days: 1 },
+//     { label: "3 days", days: 3 },
+//     { label: "1 week", days: 7 },
+//   ];
+
+//   return (
+//     <div>
+//       <label className={labelClass}>{label}</label>
+//       <div className="relative">
+//         <input
+//           type="date"
+//           value={value}
+//           onChange={(e) => onChange(e.target.value)}
+//           className={inputClass}
+//         />
+//         <CalendarDays
+//           size={18}
+//           className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted"
+//         />
+//       </div>
+//       <div className="mt-2 flex flex-wrap gap-2">
+//         {shortcuts.map((opt) => {
+//           const dateKey = formatDateKey(addDays(new Date(), opt.days));
+//           const selected = value === dateKey;
+//           return (
+//             <button
+//               key={opt.label}
+//               type="button"
+//               onClick={() => onChange(dateKey)}
+//               className={cn(
+//                 "rounded-full border px-3 py-1 text-[12px] font-medium transition-colors",
+//                 selected
+//                   ? "border-primary bg-primary text-primary-foreground"
+//                   : "border-border bg-surface text-muted",
+//               )}
+//             >
+//               {opt.label}
+//             </button>
+//           );
+//         })}
+//       </div>
+//     </div>
+//   );
+// }
+function FollowUpDateField({
+  label,
+  value,
+  onChange,
+  variant = "default",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  variant?: "default" | "add";
+}) {
+  const inputClass =
+    variant === "add"
+      ? "w-full rounded-[10px] border border-border bg-surface py-2.5 pl-3 pr-10 text-sm text-primary outline-none focus:border-primary [color-scheme:light]"
+      : "w-full rounded-xl border border-zinc-200 py-2.5 pl-3 pr-10 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 [color-scheme:light]";
+
+  const labelClass =
+    variant === "add"
+      ? "mb-1.5 block text-xs font-semibold text-muted"
+      : "mb-1 block text-sm font-medium text-zinc-700";
+
+  const shortcuts = [
+    { label: "Today", days: 0 },
+    { label: "Tomorrow", days: 1 },
+    { label: "3 days", days: 3 },
+    { label: "1 week", days: 7 },
+  ];
+
+  const getDateTimeKey = (days: number) => {
+    const date = addDays(new Date(), days);
+
+    // Set default time to current time
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  return (
+    <div>
+      <label className={labelClass}>{label}</label>
+
+      <div className="relative">
+        <input
+          type="datetime-local"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={inputClass}
+        />
+
+        <CalendarDays
+          size={18}
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted"
+        />
+      </div>
+
+      <div className="mt-2 flex flex-wrap gap-2">
+        {shortcuts.map((opt) => {
+          const dateKey = getDateTimeKey(opt.days);
+
+          const selected =
+            value.split("T")[0] === dateKey.split("T")[0];
+
+          return (
+            <button
+              key={opt.label}
+              type="button"
+              onClick={() => onChange(dateKey)}
+              className={cn(
+                "rounded-full border px-3 py-1 text-[12px] font-medium transition-colors",
+                selected
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-surface text-muted",
+              )}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Field({
   label,
   value,
@@ -254,6 +455,7 @@ function Field({
   placeholder,
   variant = "default",
   className,
+  error,
 }: {
   label: string;
   value: string;
@@ -262,6 +464,7 @@ function Field({
   placeholder?: string;
   variant?: "default" | "add";
   className?: string;
+  error?: string;
 }) {
   const inputClass =
     variant === "add"
@@ -274,15 +477,16 @@ function Field({
       : "mb-1 block text-sm font-medium text-zinc-700";
 
   return (
-    <div className={className}>
+    <div className={className} data-field-error={error ? "true" : undefined}>
       <label className={labelClass}>{label}</label>
       <input
         type={type}
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className={inputClass}
+        className={cn(inputClass, error && fieldErrorBorder)}
       />
+      {error && <p className={fieldErrorText}>{error}</p>}
     </div>
   );
 }

@@ -54,8 +54,8 @@ export function CallWhatsAppButtons({
         href={phoneDialLink(phone)}
         className={
           compact
-            ? "flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white"
-            : "flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 font-medium text-white active:bg-emerald-700"
+            ? "flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white"
+            : "flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-medium text-white active:bg-emerald-700"
         }
       >
         <Phone size={compact ? 16 : 18} />

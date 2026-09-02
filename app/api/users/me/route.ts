@@ -64,7 +64,8 @@ export async function PATCH(request: NextRequest) {
 
     if (body.phone !== undefined) {
       const normalizedPhone = formatPhone(body.phone);
-      if (!normalizedPhone || normalizedPhone.length < 10) {
+
+      if (!normalizedPhone || !/^\d{10}$/.test(normalizedPhone)) {
         return Response.json(
           { error: "Enter a valid 10-digit phone number" },
           { status: 400 },

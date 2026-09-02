@@ -1,6 +1,7 @@
 "use client";
 
 import type { Lead } from "@/lib/types";
+import { normalizeIndianPhone } from "@/lib/utils";
 import {
   cn,
   getLeadStatus,
@@ -57,6 +58,7 @@ export function LeadCard({ lead, onClick }: Props) {
         {meta && (
           <p className="mt-0.5 truncate text-[12.5px] text-muted">{meta}</p>
         )}
+        <p className="mt-0.5 text-[12px] text-muted/80">{normalizeIndianPhone(lead.phone)}</p>
       </button>
 
       <CallWhatsAppButtons

@@ -5,6 +5,30 @@ import { parseFollowUpDate } from "@/lib/utils";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  const userId = getUserId(request);
+  if (!userId) return unauthorized();
+
+  const { id } = await params;
+
+  try {
+    const lead = await prisma.lead.findFirst({ where: { id, userId } });
+    if (!lead) {
+      return Response.json({ error: "Lead not found" }, { status: 404 });
+    }
+
+    return Response.json({
+      ...lead,
+      followUpDate: lead.followUpDate?.toISOString() ?? null,
+      createdAt: lead.createdAt.toISOString(),
+      updatedAt: lead.updatedAt.toISOString(),
+    });
+  } catch (error) {
+    console.error("get lead error:", error);
+    return Response.json({ error: "Failed to fetch lead" }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const userId = getUserId(request);
   if (!userId) return unauthorized();

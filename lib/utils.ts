@@ -2,6 +2,17 @@ export function formatPhone(phone: string): string {
   return phone.replace(/\D/g, "");
 }
 
+export function normalizeIndianPhone(phone: string): string {
+  const digits = formatPhone(phone);
+  if (!digits) return "";
+  if (digits.length >= 10) return digits.slice(-10);
+  return digits;
+}
+
+export function isValidIndianPhone(phone: string): boolean {
+  return normalizeIndianPhone(phone).length === 10;
+}
+
 export function phoneDialLink(phone: string): string {
   const digits = formatPhone(phone);
   return digits ? `tel:+${digits.startsWith("91") ? digits : `91${digits}`}` : "#";

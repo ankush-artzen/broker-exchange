@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Lead, LeadFormData } from "@/lib/types";
-import { formatDate, getLeadStatus } from "@/lib/utils";
+import { formatDate, getLeadStatus, normalizeIndianPhone } from "@/lib/utils";
 import { CallWhatsAppButtons } from "./CallWhatsAppButtons";
 import { RescheduleButtons } from "./RescheduleButtons";
-import { LeadForm } from "./LeadForm";
 import { Modal } from "./Modal";
+import { Check, Pencil, Trash2 } from "lucide-react";
 
 interface Props {
   lead: Lead | null;
@@ -23,7 +24,7 @@ export function LeadDetailSheet({
   onUpdate,
   onDelete,
 }: Props) {
-  const [editing, setEditing] = useState(false);
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   if (!lead) return null;
@@ -66,77 +67,65 @@ export function LeadDetailSheet({
     }
   };
 
+  const handleEdit = () => {
+    onClose();
+    router.push(`/leads/${lead.id}/edit`);
+  };
+
   return (
-    <Modal
-      open={open}
-      onClose={() => {
-        setEditing(false);
-        onClose();
-      }}
-      title={editing ? "Edit Lead" : lead.name}
-    >
-      {editing ? (
-        <LeadForm
-          initial={lead}
-          onSubmit={async (data) => {
-            await onUpdate(lead.id, data);
-            setEditing(false);
-            onClose();
-          }}
-          onCancel={() => setEditing(false)}
-        />
-      ) : (
-        <div className="space-y-4">
-          <InfoRow label="Phone" value={lead.phone} />
-          <InfoRow label="Requirement" value={lead.requirement} />
-          <InfoRow label="Location" value={lead.location} />
-          <InfoRow label="Budget" value={lead.budget} />
-          <InfoRow label="Source" value={lead.source} />
-          <InfoRow
-            label="Status"
-            value={statusLabel}
-          />
-          <InfoRow label="Follow-up" value={formatDate(lead.followUpDate)} />
-          {lead.notes && <InfoRow label="Notes" value={lead.notes} />}
+    <Modal open={open} onClose={onClose} title={lead.name}>
+      <div className="space-y-4">
+        <InfoRow label="Phone" value={normalizeIndianPhone(lead.phone)} />
+        <InfoRow label="Requirement" value={lead.requirement} />
+        <InfoRow label="Location" value={lead.location} />
+        <InfoRow label="Budget" value={lead.budget} />
+        <InfoRow label="Source" value={lead.source} />
+        <InfoRow label="Status" value={statusLabel} />
+        <InfoRow label="Follow-up" value={formatDate(lead.followUpDate)} />
+        {lead.notes && <InfoRow label="Notes" value={lead.notes} />}
 
-          <CallWhatsAppButtons phone={lead.phone} whatsappMessage={whatsappMsg} />
+        <CallWhatsAppButtons phone={lead.phone} whatsappMessage={whatsappMsg} />
 
+        {!lead.followUpDone && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-zinc-700">Reschedule</p>
+            <RescheduleButtons onReschedule={handleReschedule} loading={loading} />
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2 pt-2">
           {!lead.followUpDone && (
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-zinc-700">Reschedule</p>
-              <RescheduleButtons onReschedule={handleReschedule} loading={loading} />
-            </div>
-          )}
-
-          <div className="flex flex-col gap-2 pt-2">
-            {!lead.followUpDone && (
-              <button
-                type="button"
-                disabled={loading}
-                onClick={handleMarkDone}
-                className="w-full rounded-xl bg-emerald-600 py-3 font-medium text-white disabled:opacity-50"
-              >
-                Mark Follow-up Done
-              </button>
-            )}
             <button
               type="button"
-              onClick={() => setEditing(true)}
-              className="w-full rounded-xl border border-zinc-200 py-3 font-medium text-zinc-700"
+              disabled={loading}
+              onClick={handleMarkDone}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-medium text-white disabled:opacity-50"
             >
+              <Check size={18} />
+              Mark Follow-up Done
+            </button>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleEdit}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border py-3 font-medium text-primary"
+            >
+              <Pencil size={18} />
               Edit
             </button>
             <button
               type="button"
               disabled={loading}
               onClick={handleDelete}
-              className="w-full rounded-xl py-3 font-medium text-red-600 disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-3 font-medium text-red-600 disabled:opacity-50"
             >
+              <Trash2 size={18} />
               Delete
             </button>
           </div>
         </div>
-      )}
+      </div>
     </Modal>
   );
 }

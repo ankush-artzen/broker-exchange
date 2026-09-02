@@ -85,7 +85,7 @@ export default function AccountPage() {
           ) : error ? (
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-primary">Profile</p>
-              <p className="text-sm text-overdue">Could not load profile</p>
+              <p className="text-sm text-overdue-muted">Could not load profile</p>
             </div>
           ) : profile ? (
             <>
@@ -114,7 +114,7 @@ export default function AccountPage() {
 
         {profileOpen && !loading && error && (
           <div className="border-t border-border px-4 py-4 text-center">
-            <p className="text-sm text-overdue">{error}</p>
+            <p className="text-sm text-overdue-muted">{error}</p>
             <button
               type="button"
               onClick={load}
