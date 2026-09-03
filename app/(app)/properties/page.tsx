@@ -12,12 +12,13 @@ import { usePagination } from "@/hooks/usePagination";
 import { cn, getPropertyStatus } from "@/lib/utils";
 import { House } from "lucide-react";
 
-type PropertyFilter = "all" | "available" | "reserved";
+type PropertyFilter = "all" | "available" | "reserved" | "sold";
 
 const filters: { id: PropertyFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "available", label: "Available" },
   { id: "reserved", label: "Reserved" },
+  { id: "sold", label: "Sold" },
 ];
 
 export default function PropertiesPage() {

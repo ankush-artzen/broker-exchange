@@ -6,7 +6,10 @@ import type { PropertyFormData } from "@/lib/types";
 import { LocationPicker } from "@/components/LocationPicker";
 import { PriceField } from "@/components/PriceField";
 import { AreaField } from "@/components/AreaField";
-import { getConfigurationOptions } from "@/lib/constants/property";
+import {
+  getConfigurationOptions,
+  PROPERTY_AVAILABILITY_OPTIONS,
+} from "@/lib/constants/property";
 import {
   fieldErrorBorder,
   fieldErrorText,
@@ -183,8 +186,11 @@ export function PropertyForm({
           onChange={(e) => update("availability", e.target.value)}
           className="w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
         >
-          <option value="available">Available</option>
-          <option value="reserved">Reserved</option>
+          {PROPERTY_AVAILABILITY_OPTIONS.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
         </select>
       </div>
 

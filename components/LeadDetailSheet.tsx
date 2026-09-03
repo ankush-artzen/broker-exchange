@@ -14,6 +14,7 @@ import {
 } from "@/lib/utils";
 import { CallWhatsAppButtons } from "./CallWhatsAppButtons";
 import { RescheduleButtons } from "./RescheduleButtons";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { Modal } from "./Modal";
 import {
   CalendarClock,
@@ -79,6 +80,7 @@ export function LeadDetailSheet({
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (!lead) return null;
 
@@ -113,10 +115,10 @@ export function LeadDetailSheet({
   };
 
   const handleDelete = async () => {
-    if (!confirm("Delete this lead?")) return;
     setLoading(true);
     try {
       await onDelete(lead.id);
+      setConfirmOpen(false);
       onClose();
     } finally {
       setLoading(false);
@@ -129,7 +131,15 @@ export function LeadDetailSheet({
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={lead.name}>
+    <>
+    <Modal
+      open={open}
+      onClose={() => {
+        setConfirmOpen(false);
+        onClose();
+      }}
+      title={lead.name}
+    >
       <div className="space-y-5">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary-tint text-sm font-semibold text-secondary-dark">
@@ -281,7 +291,7 @@ export function LeadDetailSheet({
             <button
               type="button"
               disabled={loading}
-              onClick={handleDelete}
+              onClick={() => setConfirmOpen(true)}
               className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-3 text-sm font-medium text-red-600 disabled:opacity-50"
             >
               <Trash2 size={18} />
@@ -291,6 +301,15 @@ export function LeadDetailSheet({
         </div>
       </div>
     </Modal>
+    <ConfirmDialog
+      open={confirmOpen}
+      title="Delete this lead?"
+      description="This can’t be undone. The lead and its follow-up history will be removed."
+      loading={loading}
+      onCancel={() => setConfirmOpen(false)}
+      onConfirm={handleDelete}
+    />
+    </>
   );
 }
 

@@ -22,6 +22,11 @@ const statusStyles = {
     className: "bg-today/90 text-white",
     stripe: "bg-today",
   },
+  sold: {
+    label: "Sold",
+    className: "bg-muted/90 text-white",
+    stripe: "bg-muted",
+  },
 } as const;
 
 export function PropertyCard({ property, onClick }: Props) {
@@ -108,13 +113,32 @@ export function PropertyCard({ property, onClick }: Props) {
                       <span className="shrink-0 text-border">•</span>
                     )}
                     <MapPin size={12} className="shrink-0" />
-                    <TruncatedText
+                    {/* <TruncatedText
                       as="span"
                       wrapperClassName="min-w-0 flex-1"
                       className="text-[12.5px] text-muted"
                     >
                       {property.location}
-                    </TruncatedText>
+                    </TruncatedText> */}
+
+{/* <TruncatedText
+  as="span"
+  wrapperClassName="min-w-0 flex-1 overflow-hidden"
+  className="block truncate text-[12.5px] text-muted"
+>
+  {property.location}
+</TruncatedText> */}
+<span
+  title={property.location}
+  className="min-w-0 flex-1 overflow-hidden"
+>
+  <TruncatedText
+    as="span"
+    className="block truncate text-[12.5px] text-muted"
+  >
+    {property.location}
+  </TruncatedText>
+</span>
                   </>
                 )}
               </div>

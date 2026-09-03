@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { Property } from "@/lib/types";
+import { getPropertyStatus, PROPERTY_STATUS_LABELS } from "@/lib/utils";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { Modal } from "./Modal";
 import { ImageLightbox } from "./ImageLightbox";
 import { Pencil, Trash2 } from "lucide-react";
@@ -23,15 +25,16 @@ export function PropertyDetailSheet({
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [zoomedUrl, setZoomedUrl] = useState<string | null>(null);
 
   if (!property) return null;
 
   const handleDelete = async () => {
-    if (!confirm("Delete this property?")) return;
     setLoading(true);
     try {
       await onDelete(property.id);
+      setConfirmOpen(false);
       onClose();
     } finally {
       setLoading(false);
@@ -44,10 +47,12 @@ export function PropertyDetailSheet({
   };
 
   return (
+    <>
     <Modal
       open={open}
       onClose={() => {
         setZoomedUrl(null);
+        setConfirmOpen(false);
         onClose();
       }}
       title={property.title}
@@ -81,7 +86,14 @@ export function PropertyDetailSheet({
         <InfoRow label="Price" value={property.price} />
         <InfoRow label="Configuration" value={property.configuration} />
         <InfoRow label="Area" value={property.area} />
-        <InfoRow label="Availability" value={property.availability} />
+        <InfoRow
+          label="Availability"
+          value={
+            property.availability
+              ? PROPERTY_STATUS_LABELS[getPropertyStatus(property)]
+              : null
+          }
+        />
         {property.notes && <InfoRow label="Notes" value={property.notes} />}
 
         <div className="flex gap-2 pt-2">
@@ -96,7 +108,7 @@ export function PropertyDetailSheet({
           <button
             type="button"
             disabled={loading}
-            onClick={handleDelete}
+            onClick={() => setConfirmOpen(true)}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-3 font-medium text-red-600 disabled:opacity-50"
           >
             <Trash2 size={18} />
@@ -105,6 +117,15 @@ export function PropertyDetailSheet({
         </div>
       </div>
     </Modal>
+    <ConfirmDialog
+      open={confirmOpen}
+      title="Delete this property?"
+      description="This can’t be undone. The property and its photos will be removed."
+      loading={loading}
+      onCancel={() => setConfirmOpen(false)}
+      onConfirm={handleDelete}
+    />
+    </>
   );
 }
 

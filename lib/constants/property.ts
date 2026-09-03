@@ -29,6 +29,15 @@ export function getConfigurationOptions(current?: string | null): string[] {
   return [...PROPERTY_CONFIGURATIONS];
 }
 
+export const PROPERTY_AVAILABILITY_OPTIONS = [
+  { id: "available", label: "Available" },
+  { id: "reserved", label: "Reserved" },
+  { id: "sold", label: "Sold" },
+] as const;
+
+export type PropertyAvailability =
+  (typeof PROPERTY_AVAILABILITY_OPTIONS)[number]["id"];
+
 export const PROPERTY_AREA_UNITS = [
   { id: "sq-ft", label: "Square Feet" },
   { id: "sq-yd", label: "Square Yards" },

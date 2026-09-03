@@ -348,12 +348,19 @@ export function isTodayFollowUpTimePassed(
   return now.getTime() > d.getTime();
 }
 
-export type PropertyStatus = "available" | "reserved";
+export type PropertyStatus = "available" | "reserved" | "sold";
+
+export const PROPERTY_STATUS_LABELS: Record<PropertyStatus, string> = {
+  available: "Available",
+  reserved: "Reserved",
+  sold: "Sold",
+};
 
 export function getPropertyStatus(property: {
   availability?: string | null;
 }): PropertyStatus {
   const value = property.availability?.toLowerCase().trim() ?? "";
+  if (value.includes("sold")) return "sold";
   if (value.includes("reserved")) return "reserved";
   return "available";
 }
