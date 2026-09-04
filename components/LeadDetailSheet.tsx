@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Lead, LeadFormData } from "@/lib/types";
 import {
   cn,
+  formatDateTime,
   formatFollowUpDateTime,
   getInitials,
   getLeadStatus,
@@ -20,6 +21,7 @@ import { Modal } from "./Modal";
 import {
   CalendarClock,
   Check,
+  Clock,
   MapPin,
   NotebookPen,
   Pencil,
@@ -170,6 +172,10 @@ export function LeadDetailSheet({
               <Phone size={14} className="shrink-0" />
               {normalizeIndianPhone(lead.phone)}
             </p>
+            {/* <p className="mt-1 flex items-center gap-1.5 text-[12px] text-muted">
+              <Clock size={13} className="shrink-0" />
+              Created {formatDateTime(lead.createdAt)}
+            </p> */}
           </div>
         </div>
 
@@ -210,13 +216,13 @@ export function LeadDetailSheet({
                     )}
                     {followUp.date}
                   </p>
-                  {followUp.time ? (
-                    <p className="mt-0.5 text-[13px] font-medium text-primary">
-                      {followUp.time}
-                    </p>
-                  ) : (
-                    <p className="mt-0.5 text-[12px] text-muted">All day</p>
-                  )}
+                  <p className="mt-0.5 text-[13px] font-medium text-primary">
+                    {new Date(lead.followUpDate).toLocaleTimeString("en-IN", {
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
+                  </p>
                 </>
               ) : (
                 <p className="mt-0.5 text-sm text-muted">Not scheduled</p>

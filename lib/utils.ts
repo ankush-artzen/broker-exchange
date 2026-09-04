@@ -86,6 +86,25 @@ export function formatDate(date: string | Date | null | undefined): string {
   });
 }
 
+export function formatDateTime(date: string | Date | null | undefined): string {
+  if (!date) return "—";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return "—";
+
+  const datePart = d.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const timePart = d.toLocaleTimeString("en-IN", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  return `${datePart}, ${timePart}`;
+}
+
 export function formatFollowUpDateTime(
   date: string | Date | null | undefined,
 ): { date: string; time: string | null } {
