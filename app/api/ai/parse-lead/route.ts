@@ -85,8 +85,8 @@ Today is ${new Date().toISOString().split("T")[0]}. If they say "tomorrow", use 
       error &&
       typeof error === "object" &&
       "status" in error &&
-      error.status === 401
-        ? "AI service misconfigured — check ANTHROPIC_API_KEY in .env"
+ error.status === 401
+        ? "AI service misconfigured"
         : "Failed to parse lead";
 
     return Response.json({ error: message }, { status });
