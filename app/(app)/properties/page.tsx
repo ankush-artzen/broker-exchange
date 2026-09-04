@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { PropertyCard } from "@/components/PropertyCard";
 import { PropertyDetailSheet } from "@/components/PropertyDetailSheet";
 import { AddButton, AppPage } from "@/components/AppPage";
+import { PropertyListSkeleton } from "@/components/Loader";
 import { ListPagination } from "@/components/ListPagination";
 import { usePagination } from "@/hooks/usePagination";
 import { cn, getPropertyStatus } from "@/lib/utils";
@@ -57,7 +58,11 @@ export default function PropertiesPage() {
   return (
     <AppPage
       title="Properties"
-      subtitle={`${properties.length} ${properties.length === 1 ? "property" : "properties"}`}
+      subtitle={
+        loading
+          ? "Loading…"
+          : `${properties.length} ${properties.length === 1 ? "property" : "properties"}`
+      }
       action={<AddButton onClick={() => router.push("/properties/new")} />}
     >
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -79,20 +84,7 @@ export default function PropertiesPage() {
       </div>
 
       {loading ? (
-        <div className="grid gap-2.5 lg:grid-cols-2 lg:gap-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="animate-pulse overflow-hidden rounded-[14px] bg-surface"
-            >
-              <div className="aspect-[16/10] bg-upcoming" />
-              <div className="space-y-2 p-3.5">
-                <div className="h-4 w-3/4 rounded bg-upcoming" />
-                <div className="h-3 w-1/2 rounded bg-upcoming" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <PropertyListSkeleton count={3} />
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl bg-surface px-4 py-9 text-center text-[13.5px] leading-relaxed text-muted">
           <House

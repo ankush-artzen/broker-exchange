@@ -7,7 +7,8 @@ import type { Lead, LeadFormData } from "@/lib/types";
 import { api } from "@/lib/api";
 import { LeadForm } from "@/components/LeadForm";
 import { AppPage } from "@/components/AppPage";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { PageLoader } from "@/components/Loader";
+import { ArrowLeft } from "lucide-react";
 
 export default function EditLeadPage() {
   const router = useRouter();
@@ -53,9 +54,7 @@ export default function EditLeadPage() {
       }
     >
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 size={28} className="animate-spin text-muted" />
-        </div>
+        <PageLoader label="Loading lead…" />
       ) : error ? (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
       ) : lead ? (

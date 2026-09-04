@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { LeadCard } from "@/components/LeadCard";
 import { LeadDetailSheet } from "@/components/LeadDetailSheet";
 import { AddButton, AppPage } from "@/components/AppPage";
+import { ListSkeleton } from "@/components/Loader";
 import { ListPagination } from "@/components/ListPagination";
 import { usePagination } from "@/hooks/usePagination";
 import {
@@ -56,7 +57,11 @@ export default function LeadsPage() {
   return (
     <AppPage
       title="Leads"
-      subtitle={`${leads.length} ${leads.length === 1 ? "lead" : "leads"}`}
+      subtitle={
+        loading
+          ? "Loading…"
+          : `${leads.length} ${leads.length === 1 ? "lead" : "leads"}`
+      }
       action={<AddButton onClick={() => router.push("/leads/create")} />}
     >
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -78,14 +83,7 @@ export default function LeadsPage() {
       </div>
 
       {loading ? (
-        <div className="grid gap-2.5 lg:grid-cols-2 lg:gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="h-[108px] animate-pulse rounded-[14px] bg-surface"
-            />
-          ))}
-        </div>
+        <ListSkeleton count={4} />
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl bg-surface px-4 py-9 text-center text-[13.5px] leading-relaxed text-muted">
           <User

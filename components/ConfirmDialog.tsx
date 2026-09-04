@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { ButtonLoader } from "@/components/Loader";
 
 interface Props {
   open: boolean;
@@ -80,7 +81,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             className="flex-1 rounded-xl border border-red-200 bg-red-50 py-3 text-sm font-medium text-red-600 disabled:opacity-50"
           >
-            {loading ? "Deleting…" : confirmLabel}
+            {loading ? <ButtonLoader label="Deleting…" /> : confirmLabel}
           </button>
         </div>
       </div>

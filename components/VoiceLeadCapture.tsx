@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { formErrorBanner } from "@/lib/form-errors";
 import { LeadForm } from "./LeadForm";
+import { ButtonLoader } from "@/components/Loader";
 import { Mic, X } from "lucide-react";
 import { Modal } from "./Modal";
 import { cn } from "@/lib/utils";
@@ -219,7 +220,7 @@ export function VoiceLeadCapture({
               onClick={handleParse}
               className="rounded-[10px] bg-secondary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"
             >
-              {parsing ? "Processing..." : "Fill from text"}
+              {parsing ? <ButtonLoader label="Processing…" size={14} /> : "Fill from text"}
             </button>
             {supported && (
               <button
@@ -263,7 +264,7 @@ export function VoiceLeadCapture({
                 onClick={handleParse}
                 className="mt-3 rounded-[10px] bg-secondary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"
               >
-                {parsing ? "Processing..." : "Fill from speech"}
+                {parsing ? <ButtonLoader label="Processing…" size={14} /> : "Fill from speech"}
               </button>
             )}
             <button

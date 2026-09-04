@@ -15,6 +15,7 @@ import {
 import { CallWhatsAppButtons } from "./CallWhatsAppButtons";
 import { RescheduleButtons } from "./RescheduleButtons";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { ButtonLoader } from "./Loader";
 import { Modal } from "./Modal";
 import {
   CalendarClock,
@@ -79,11 +80,14 @@ export function LeadDetailSheet({
   onDelete,
 }: Props) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [pending, setPending] = useState<"done" | "reschedule" | "delete" | null>(
+    null,
+  );
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (!lead) return null;
 
+  const loading = pending !== null;
   const whatsappMsg = `Hi ${lead.name}, this is regarding your property requirement${lead.requirement ? ` for ${lead.requirement}` : ""}.`;
   const status = getLeadStatus(lead);
   const tag = statusStyles[status];
@@ -92,17 +96,17 @@ export function LeadDetailSheet({
   const followUp = formatFollowUpDateTime(lead.followUpDate);
 
   const handleMarkDone = async () => {
-    setLoading(true);
+    setPending("done");
     try {
       await onUpdate(lead.id, { followUpDone: true });
       onClose();
     } finally {
-      setLoading(false);
+      setPending(null);
     }
   };
 
   const handleReschedule = async (date: Date) => {
-    setLoading(true);
+    setPending("reschedule");
     try {
       await onUpdate(lead.id, {
         followUpDate: date.toISOString(),
@@ -110,18 +114,18 @@ export function LeadDetailSheet({
       });
       onClose();
     } finally {
-      setLoading(false);
+      setPending(null);
     }
   };
 
   const handleDelete = async () => {
-    setLoading(true);
+    setPending("delete");
     try {
       await onDelete(lead.id);
       setConfirmOpen(false);
       onClose();
     } finally {
-      setLoading(false);
+      setPending(null);
     }
   };
 
@@ -263,7 +267,11 @@ export function LeadDetailSheet({
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               Reschedule
             </p>
-            <RescheduleButtons onReschedule={handleReschedule} loading={loading} />
+            <RescheduleButtons
+              onReschedule={handleReschedule}
+              loading={pending === "reschedule"}
+              disabled={loading}
+            />
           </div>
         )}
 
@@ -275,8 +283,14 @@ export function LeadDetailSheet({
               onClick={handleMarkDone}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50"
             >
-              <Check size={18} />
-              Mark follow-up done
+              {pending === "done" ? (
+                <ButtonLoader label="Updating…" />
+              ) : (
+                <>
+                  <Check size={18} />
+                  Mark follow-up done
+                </>
+              )}
             </button>
           )}
           <div className="flex gap-2">
@@ -305,7 +319,7 @@ export function LeadDetailSheet({
       open={confirmOpen}
       title="Delete this lead?"
       description="This can’t be undone. The lead and its follow-up history will be removed."
-      loading={loading}
+      loading={pending === "delete"}
       onCancel={() => setConfirmOpen(false)}
       onConfirm={handleDelete}
     />

@@ -23,6 +23,7 @@ import {
 import { PhoneField } from "@/components/PhoneField";
 import { PriceField } from "@/components/PriceField";
 import { LocationPicker } from "@/components/LocationPicker";
+import { ButtonLoader } from "@/components/Loader";
 import { CalendarDays } from "lucide-react";
 
 const emptyLead: LeadFormData = {
@@ -255,7 +256,7 @@ export function LeadForm({
         disabled={loading}
         className="w-full rounded-xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
       >
-        {loading ? "Saving..." : submitLabel}
+        {loading ? <ButtonLoader label="Saving…" /> : submitLabel}
       </button>
 
       {onCancel && (

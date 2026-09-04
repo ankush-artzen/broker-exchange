@@ -2,9 +2,10 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, Loader2, LocateFixed, MapPin, Pencil, Search } from "lucide-react";
+import { Check, LocateFixed, MapPin, Pencil, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fieldErrorBorder, fieldErrorText } from "@/lib/form-errors";
+import { Spinner } from "@/components/Loader";
 
 const LocationPickerMap = dynamic(
   () => import("./LocationPickerMap").then((m) => m.LocationPickerMap),
@@ -12,7 +13,7 @@ const LocationPickerMap = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-52 items-center justify-center rounded-xl border border-border bg-surface md:h-64">
-        <Loader2 size={24} className="animate-spin text-muted" />
+        <Spinner size={24} />
       </div>
     ),
   },
@@ -164,7 +165,7 @@ export function LocationPicker({ value, onChange, error }: Props) {
         </label>
         {resolving && mode === "map" && (
           <span className="flex items-center gap-1 text-[11px] text-muted">
-            <Loader2 size={12} className="animate-spin" />
+            <Spinner size={12} className="text-muted" />
             Finding address…
           </span>
         )}
@@ -232,9 +233,9 @@ export function LocationPicker({ value, onChange, error }: Props) {
               )}
             />
             {searching && (
-              <Loader2
+              <Spinner
                 size={16}
-                className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"
               />
             )}
           </div>

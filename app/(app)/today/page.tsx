@@ -16,6 +16,7 @@ import {
 import { LeadCard } from "@/components/LeadCard";
 import { LeadDetailSheet } from "@/components/LeadDetailSheet";
 import { AppPage } from "@/components/AppPage";
+import { ListSkeleton, StatSkeleton } from "@/components/Loader";
 import { UserAvatar } from "@/components/UserAvatar";
 import { AlertCircle, CircleCheck } from "lucide-react";
 
@@ -102,9 +103,19 @@ export default function TodayPage() {
     >
       <div className="mb-8 rounded-3xl bg-primary px-4 py-5 shadow-lg shadow-primary/20">
         <div className="grid grid-cols-3 divide-x divide-white/15">
-          <Stat value={dueTodayCount} label="Due today" />
-          <Stat value={missedTodayCount} label="Time passed" highlight />
-          <Stat value={propertiesCount} label="Properties saved" />
+          {loading ? (
+            <>
+              <StatSkeleton />
+              <StatSkeleton />
+              <StatSkeleton />
+            </>
+          ) : (
+            <>
+              <Stat value={dueTodayCount} label="Due today" />
+              <Stat value={missedTodayCount} label="Time passed" highlight />
+              <Stat value={propertiesCount} label="Properties saved" />
+            </>
+          )}
         </div>
       </div>
 
@@ -128,14 +139,7 @@ export default function TodayPage() {
         </h2>
 
         {loading ? (
-          <div className="grid gap-3 lg:grid-cols-2 lg:gap-4">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-[108px] animate-pulse rounded-[14px] bg-surface"
-              />
-            ))}
-          </div>
+          <ListSkeleton count={3} className="gap-3 lg:gap-4" />
         ) : visibleLeads.length === 0 ? (
           <div className="rounded-2xl bg-surface p-8 text-center shadow-sm">
             <CircleCheck

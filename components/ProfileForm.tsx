@@ -13,7 +13,8 @@ import {
   scrollToFirstFieldError,
 } from "@/lib/form-errors";
 import { cn, isValidIndianPhone, isValidPersonName, sanitizePersonName } from "@/lib/utils";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera } from "lucide-react";
+import { ButtonLoader, Spinner } from "@/components/Loader";
 import { PhoneField } from "@/components/PhoneField";
 import { UserAvatar } from "./UserAvatar";
 
@@ -164,7 +165,7 @@ export function ProfileForm({ user, onUpdated }: Props) {
           )}
           <span className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-primary text-primary-foreground">
             {uploading ? (
-              <Loader2 size={16} className="animate-spin" />
+              <Spinner size={16} className="text-current" />
             ) : (
               <Camera size={16} />
             )}
@@ -206,7 +207,7 @@ export function ProfileForm({ user, onUpdated }: Props) {
         disabled={saving || uploading}
         className="w-full rounded-xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
       >
-        {saving ? "Saving..." : "Save profile"}
+        {saving ? <ButtonLoader label="Saving…" /> : "Save profile"}
       </button>
     </form>
   );

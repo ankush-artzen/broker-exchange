@@ -7,11 +7,11 @@ import {
   ArrowRight,
   Bell,
   LandPlot,
-  Loader2,
   ShieldCheck,
   Users,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { ButtonLoader } from "@/components/Loader";
 import { formErrorBanner } from "@/lib/form-errors";
 import { setStoredUser } from "@/lib/storage";
 import { formatPhone, isValidIndianPhone, sanitizePersonName } from "@/lib/utils";
@@ -209,10 +209,7 @@ export default function OnboardingPage() {
               className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-transform active:scale-[0.98] disabled:opacity-50 md:py-3.5 md:text-sm"
             >
               {loading ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Setting up...
-                </>
+                <ButtonLoader label="Setting up…" size={18} />
               ) : (
                 <>
                   Get Started

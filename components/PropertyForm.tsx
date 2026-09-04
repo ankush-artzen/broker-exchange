@@ -18,7 +18,8 @@ import {
   formErrorBanner,
 } from "@/lib/form-errors";
 import { cn } from "@/lib/utils";
-import { Loader2, Plus, X } from "lucide-react";
+import { ButtonLoader, Spinner } from "@/components/Loader";
+import { Plus, X } from "lucide-react";
 import { api } from "@/lib/api";
 
 const emptyProperty: PropertyFormData = {
@@ -216,7 +217,7 @@ export function PropertyForm({
             className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 text-2xl text-zinc-400"
           >
             {uploading ? (
-              <Loader2 size={24} className="animate-spin" />
+              <Spinner size={24} className="text-muted" />
             ) : (
               <Plus size={24} />
             )}
@@ -253,7 +254,7 @@ export function PropertyForm({
           disabled={loading || uploading}
           className="flex-1 rounded-xl bg-primary py-3 font-medium text-white disabled:opacity-50"
         >
-          {loading ? "Saving..." : submitLabel}
+          {loading ? <ButtonLoader label="Saving…" /> : submitLabel}
         </button>
       </div>
     </form>
