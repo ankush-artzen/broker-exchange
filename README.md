@@ -8,7 +8,7 @@ Mobile-friendly CRM for real-estate brokers — manage leads, properties, and da
 - **Backend:** Next.js API routes
 - **Database:** MongoDB Atlas via **Prisma** (not Mongoose)
 - **Photos:** Cloudinary
-- **AI:** Anthropic Claude Haiku (voice lead parsing)
+- **AI:** OpenAI or Anthropic Claude Haiku (voice lead parsing)
 - **PWA:** Installable on Android home screen
 
 ## Setup
@@ -24,7 +24,9 @@ cp .env.example .env
 | Variable | Description |
 |----------|-------------|
 | `DATABASE_URL` | MongoDB Atlas connection string |
-| `ANTHROPIC_API_KEY` | For voice lead extraction |
+| `OPENAI_API_KEY` | For voice lead extraction (preferred if set) |
+| `ANTHROPIC_API_KEY` | Alternate AI provider for voice lead extraction |
+| `AI_PROVIDER` | Optional: `openai` or `anthropic` to force a provider |
 | `CLOUDINARY_*` | For property photo uploads |
 
 3. Push schema to MongoDB:
@@ -64,7 +66,7 @@ Auth: pass `x-user-id` header (stored in browser localStorage after onboarding).
 
 - **Broker identity** — name + phone, no password
 - **Leads** — CRUD, follow-up dates, call/WhatsApp, reschedule
-- **Voice capture** — English/Hindi/Punjabi speech → Claude Haiku → pre-filled form
+- **Voice capture** — English/Hindi/Punjabi speech → OpenAI or Claude Haiku → pre-filled form
 - **Properties** — CRUD with Cloudinary photo uploads
 - **Today screen** — overdue + due today, sorted by date
 - **PWA** — manifest + service worker for home-screen install
