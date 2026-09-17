@@ -20,11 +20,19 @@ function resolveProvider(): AiProvider | null {
 
 function extractionPrompt(text: string, langLabel: string) {
   return `You extract real-estate lead information from broker voice notes.
-The speech was in ${langLabel}. Transcribed text:
+The speech was in ${langLabel}. Transcribed text may be Hindi, Punjabi, English, or mixed.
 
 """
 ${text.trim()}
 """
+
+CRITICAL: Every string value you return MUST be in English only.
+- Translate Hindi/Punjabi meaning into English. Do not copy Devanagari or Gurmukhi into any field.
+- Names and place names: use English/Latin spelling (e.g. "Rajesh Sharma", "Mohali", "Chandigarh").
+- Requirement: English (e.g. "2BHK", "shop", "plot").
+- Budget: English numerals and words (e.g. "50 lakh", "1.2 crore").
+- Source: English (e.g. "referral", "walk-in", "portal").
+- Notes: a short English summary of anything extra.
 
 Return ONLY valid JSON with these optional fields (use null for missing):
 {
@@ -58,7 +66,8 @@ async function parseWithOpenAI(prompt: string): Promise<string> {
     messages: [
       {
         role: "system",
-        content: "Extract lead fields. Return only valid JSON.",
+        content:
+          "Extract lead fields. Translate any Hindi or Punjabi into English. Every JSON string value must be English/Latin script only. Return only valid JSON.",
       },
       { role: "user", content: prompt },
     ],
